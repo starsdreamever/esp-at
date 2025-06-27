@@ -995,12 +995,13 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
 
     // Clear connect status flag
     at_web_update_sta_got_ip_flag(false);
-    esp_netif_dhcpc_stop(sta_if);
+    
     
 /* 
     esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     esp_netif_ip_info_t info_t;
-
+    
+    esp_netif_dhcpc_stop(sta_if);
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
     inet_aton(connect_config.ip,&info_t.ip.addr);
     inet_aton(connect_config.nm,&info_t.netmask.addr);
