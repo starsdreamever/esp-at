@@ -994,16 +994,15 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     // Clear connect status flag
     at_web_update_sta_got_ip_flag(false);
 
-    esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
-    esp_netif_t *netif = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
+    esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     esp_netif_ip_info_t info_t;
-    esp_netif_dhcpc_stop(netif);
+    esp_netif_dhcpc_stop(sta_if);
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
     info_t.ip.addr = esp_ip4addr_aton((const char *)connect_config.ip);
     info_t.netmask.addr = esp_ip4addr_aton((const char *)connect_config.nm);
     info_t.gw.addr = esp_ip4addr_aton((const char *)connect_config.gw);
     ESP_LOGI(TAG, "static ip 1");
-    ESP_ERROR_CHECK( esp_netif_set_ip_info(netif, &info_t));
+    ESP_ERROR_CHECK( esp_netif_set_ip_info(sta_if, &info_t));
     ESP_LOGI(TAG, "static ip 2");
 
     // According to config wifi device to try connect
