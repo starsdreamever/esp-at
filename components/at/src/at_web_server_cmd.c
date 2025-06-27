@@ -992,11 +992,13 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     int32_t connect_timeout = reconnnect_timeout - ESP_AT_WEB_BROADCAST_TIMES_DEFAULT * ESP_AT_WEB_BROADCAST_INTERVAL_DEFAULT / 1000000;
 
     // Clear connect status flag
-/*    at_web_update_sta_got_ip_flag(false);
-
+    at_web_update_sta_got_ip_flag(false);
+/*    esp_netif_dhcpc_stop(sta_if);
+  
+*/  
     esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     esp_netif_ip_info_t info_t;
-    esp_netif_dhcpc_stop(sta_if);
+    
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
     info_t.ip.addr = esp_ip4addr_aton((const char *)connect_config.ip);
     info_t.netmask.addr = esp_ip4addr_aton((const char *)connect_config.nm);
@@ -1004,7 +1006,7 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     ESP_LOGI(TAG, "static ip 1");
     ESP_ERROR_CHECK( esp_netif_set_ip_info(sta_if, &info_t));
     ESP_LOGI(TAG, "static ip 2");
-*/
+
     // According to config wifi device to try connect
     // when udp_port == -1, it's web browser post data to config wifi. otherwise, Now, It's WeChat post data to config wifi.
     // when (strlen((char *)connect_config->ssid) == 0) && (udp_port != -1), it's WeChat post data, and target AP is local phone.
