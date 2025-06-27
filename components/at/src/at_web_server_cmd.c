@@ -109,6 +109,9 @@ typedef struct web_server_context {
 typedef struct {
     uint8_t ssid[33];
     uint8_t password[65];
+    uint8_t ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
+    uint8_t nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
+    uint8_t gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
 } wifi_sta_connect_config_t;
 
 typedef enum {
@@ -990,6 +993,19 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
 
     // Clear connect status flag
     at_web_update_sta_got_ip_flag(false);
+
+    esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    esp_netif_t *netif = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
+    esp_netif_ip_info_t info_t;
+    esp_netif_dhcpc_stop(netif);
+    memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
+    info_t.ip.addr = esp_ip4addr_aton((const char *)connect_config.ip);
+    info_t.netmask.addr = esp_ip4addr_aton((const char *)connect_config.nm);
+    info_t.gw.addr = esp_ip4addr_aton((const char *)connect_config.gw);
+    ESP_LOGI(TAG, "static ip 1");
+    ESP_ERROR_CHECK( esp_netif_set_ip_info(netif, &info_t));
+    ESP_LOGI(TAG, "static ip 2");
+
     // According to config wifi device to try connect
     // when udp_port == -1, it's web browser post data to config wifi. otherwise, Now, It's WeChat post data to config wifi.
     // when (strlen((char *)connect_config->ssid) == 0) && (udp_port != -1), it's WeChat post data, and target AP is local phone.
@@ -1130,8 +1146,9 @@ err:
 
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
-    char ssid[33] = {0}, password[65] = {0};
-    int32_t ssid_len = 0, password_len = 0;
+    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1];
+    char nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1],gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1];
+    int32_t ssid_len = 0, password_len = 0, ip_len = 0, nm_len = 0, gw_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
 
     root = cJSON_Parse(buffer);
@@ -1166,10 +1183,50 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(password, item->valuestring, password_len);
         }
     }
+
+    item = cJSON_GetObjectItem(root, "webip");
+    if (item) {
+        ip_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webip:%s", item->valuestring);
+        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
+            ESP_LOGE(TAG, "webip is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(ip, item->valuestring, ip_len);
+        }
+    }
+        
+    item = cJSON_GetObjectItem(root, "webnm");
+    if (item) {
+        nm_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webnm:%s", item->valuestring);
+        if (nm_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
+            ESP_LOGE(TAG, "webnm is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(nm, item->valuestring, nm_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webgw");
+    if (item) {
+        gw_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webgw:%s", item->valuestring);
+        if (gw_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
+            ESP_LOGE(TAG, "webgw is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(gw, item->valuestring, gw_len);
+        }
+    }
+
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
+    memcpy(config->ip, ip, ip_len);
+    memcpy(config->nm, nm, nm_len);
+    memcpy(config->gw, gw, gw_len);
 
     return ESP_OK;
 }
@@ -1204,8 +1261,8 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
             ESP_LOGE(TAG, "failed to parse wifi info, json str: %s", buf);
             goto error_handle;
         }
-        ESP_LOGD(TAG, "ssid(%d):%s password:(%d):%s\r\n",
-                 strlen((char *)wifi_config.ssid), wifi_config.ssid, strlen((char *)wifi_config.password), wifi_config.password);
+        ESP_LOGD(TAG, "ssid(%d):%s password:(%d):%s ip:(%d):%s nm:(%d):%s gw:(%d):%s:\r\n",
+                 strlen((char *)wifi_config.ssid), wifi_config.ssid, strlen((char *)wifi_config.password), wifi_config.password, strlen((char *)wifi_config.ip), wifi_config.ip, strlen((char *)wifi_config.nm), wifi_config.nm, strlen((char *)wifi_config.gw), wifi_config.gw);
 
         // check the validity of ssid and password
         if (strlen((char *)&wifi_config.ssid) == 0) {
@@ -1213,6 +1270,10 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
         }
         if ((ssid_is_null == true) && (strlen((char *)&wifi_config.password) == 0)) {
             ESP_LOGE(TAG, "Error, ssid and password all is null");
+            goto error_handle;
+        }
+        if ((strlen((char *)&wifi_config.ip) == 0) && (strlen((char *)&wifi_config.nm) == 0) && (strlen((char *)&wifi_config.gw) == 0)) {
+            ESP_LOGE(TAG, "Error, ip nm and gw all is null");
             goto error_handle;
         }
 
