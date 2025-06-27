@@ -32,6 +32,7 @@
 #include "esp_partition.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
+#include "lwip/ip_addr.h"
 
 #include "esp_at.h"
 
