@@ -32,7 +32,7 @@
 #include "esp_partition.h"
 #include "esp_mac.h"
 #include "esp_netif.h"
-#include "lwip/ip_addr.h"
+#include "ip_addr.h"
 
 #include "esp_at.h"
 
@@ -1002,9 +1002,10 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     esp_netif_ip_info_t info_t;
 
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
-    info_t.ip.addr = ipaddr_addr(connect_config.ip);
-    info_t.netmask.addr = ipaddr_addr(connect_config.nm);
-    info_t.gw.addr = ipaddr_addr(connect_config.gw);
+    inet_aton(connect_config.ip,&info_t.ip.addr);
+    inet_aton(connect_config.nm,&info_t.netmask.addr);
+    inet_aton(connect_config.gw,&info_t.gw.addr);
+
     if (esp_netif_set_ip_info(sta_if, &info_t) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set ip info");
     }
