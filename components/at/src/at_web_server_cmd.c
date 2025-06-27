@@ -998,18 +998,22 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     
     
 /* 
+    esp_netif_ip_info_t sta_ip = {0};
     esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    esp_netif_ip_info_t info_t;
-    
+
     esp_netif_dhcpc_stop(sta_if);
-    memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
+    memset(&sta_ip, 0, sizeof(esp_netif_ip_info_t));
+
+    sta_ip.ip.addr = ipaddr_addr(&connect_config.ip);
+    sta_ip.netmask.addr = ipaddr_addr(&connect_config.nm);
+    sta_ip.gw.addr = ipaddr_addr(&connect_config.gw);
+    if (esp_netif_set_ip_info(sta_if, &sta_ip) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+    }    
     inet_aton(connect_config.ip,&info_t.ip.addr);
     inet_aton(connect_config.nm,&info_t.netmask.addr);
     inet_aton(connect_config.gw,&info_t.gw.addr);
 
-    if (esp_netif_set_ip_info(sta_if, &info_t) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set ip info");
-    }
 */ 
     // According to config wifi device to try connect
     // when udp_port == -1, it's web browser post data to config wifi. otherwise, Now, It's WeChat post data to config wifi.
@@ -1188,7 +1192,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(password, item->valuestring, password_len);
         }
     }
-
+/*
     item = cJSON_GetObjectItem(root, "webip");
     if (item) {
         ip_len = strlen(item->valuestring);
@@ -1224,15 +1228,15 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(gw, item->valuestring, gw_len);
         }
     }
-
+*/
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-    memcpy(config->ip, ip, ip_len);
+ /*   memcpy(config->ip, ip, ip_len);
     memcpy(config->nm, nm, nm_len);
     memcpy(config->gw, gw, gw_len);
-
+*/
     return ESP_OK;
 }
 
