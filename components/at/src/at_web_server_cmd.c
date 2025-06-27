@@ -1001,12 +1001,12 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     esp_netif_ip_info_t info_t;
 
     memset(&info_t, 0, sizeof(esp_netif_ip_info_t));
-    info_t.ip.addr = inet_addr(connect_config.ip);
-    info_t.netmask.addr = inet_addr(connect_config.nm);
-    info_t.gw.addr = inet_addr(connect_config.gw);
-    ESP_LOGI(TAG, "static ip 1");
-    esp_netif_set_ip_info(sta_if, &info_t);
-    ESP_LOGI(TAG, "static ip 2");
+    info_t.ip.addr = ipaddr_addr(connect_config.ip);
+    info_t.netmask.addr = ipaddr_addr(connect_config.nm);
+    info_t.gw.addr = ipaddr_addr(connect_config.gw);
+    if (esp_netif_set_ip_info(sta_if, &info_t) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+    }
 
     // According to config wifi device to try connect
     // when udp_port == -1, it's web browser post data to config wifi. otherwise, Now, It's WeChat post data to config wifi.
