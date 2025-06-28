@@ -1144,7 +1144,7 @@ err:
     at_web_update_sta_connection_info(&connection_info);
     return ESP_FAIL;
 }
-
+/*
 static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t sta_ip)
 {
     char ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
@@ -1202,7 +1202,7 @@ static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t
 
     return ESP_OK;
 }
-
+*/
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
     char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1] = {0};
