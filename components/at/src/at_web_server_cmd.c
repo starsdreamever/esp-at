@@ -1130,9 +1130,8 @@ err:
 
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
-    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1];
-    char nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1],gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1];
-    int32_t ssid_len = 0, password_len = 0, ip_len = 0, nm_len = 0, gw_len = 0;
+    char ssid[33] = {0}, password[65] = {0};
+    int32_t ssid_len = 0, password_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
 
     root = cJSON_Parse(buffer);
@@ -1167,51 +1166,11 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(password, item->valuestring, password_len);
         }
     }
-/*
-    item = cJSON_GetObjectItem(root, "webip");
-    if (item) {
-        ip_len = strlen(item->valuestring);
-        ESP_LOGD(TAG, "webip:%s", item->valuestring);
-        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
-            ESP_LOGE(TAG, "webip is too long");
-            return ESP_FAIL;
-        } else {
-            strncpy(ip, item->valuestring, ip_len);
-        }
-    }
-        
-    item = cJSON_GetObjectItem(root, "webnm");
-    if (item) {
-        nm_len = strlen(item->valuestring);
-        ESP_LOGD(TAG, "webnm:%s", item->valuestring);
-        if (nm_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
-            ESP_LOGE(TAG, "webnm is too long");
-            return ESP_FAIL;
-        } else {
-            strncpy(nm, item->valuestring, nm_len);
-        }
-    }
-
-    item = cJSON_GetObjectItem(root, "webgw");
-    if (item) {
-        gw_len = strlen(item->valuestring);
-        ESP_LOGD(TAG, "webgw:%s", item->valuestring);
-        if (gw_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
-            ESP_LOGE(TAG, "webgw is too long");
-            return ESP_FAIL;
-        } else {
-            strncpy(gw, item->valuestring, gw_len);
-        }
-    }
-*/
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-    memcpy(config->ip, ip, ip_len);
- /*   memcpy(config->nm, nm, nm_len);
-    memcpy(config->gw, gw, gw_len);
-*/
+
     return ESP_OK;
 }
 
