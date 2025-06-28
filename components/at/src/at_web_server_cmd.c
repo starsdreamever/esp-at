@@ -52,6 +52,7 @@
 #include "esp_mac.h"
 
 #include "esp_at.h"
+#include "lwip/ip_addr.h"
 
 #ifdef CONFIG_AT_WEB_SERVER_SUPPORT
 #include "esp_http_server.h"
