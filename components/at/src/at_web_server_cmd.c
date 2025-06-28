@@ -111,7 +111,7 @@ extern void at_wifi_reconnect_init(bool force);
 extern esp_err_t at_wifi_connect(void);
 extern esp_err_t at_wifi_disconnect(void);
 extern esp_err_t at_wifi_scan_start(const wifi_scan_config_t *config, bool block);
-static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t sta_ip);
+esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t *sta_webinfo);
 
 typedef struct router_obj {
     uint8_t ssid[32];
@@ -1144,8 +1144,8 @@ err:
     at_web_update_sta_connection_info(&connection_info);
     return ESP_FAIL;
 }
-/*
-static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t sta_ip)
+
+esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t *sta_webinfo)
 {
     char ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
     int32_t ip_len = 0, nm_len = 0, gw_len = 0;
@@ -1157,8 +1157,8 @@ static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t
         return ESP_FAIL;
     }
 
-    int json_item_num = cJSON_GetArraySize(root);
-    ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
+//    int json_item_num = cJSON_GetArraySize(root);
+//    ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
 
     item = cJSON_GetObjectItem(root, "webip");
     if (item) {
@@ -1202,7 +1202,7 @@ static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t
 
     return ESP_OK;
 }
-*/
+
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
     char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1] = {0};
