@@ -1145,8 +1145,8 @@ err:
 
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
-    char ssid[33] = {0}, password[65] = {0};
-    int32_t ssid_len = 0, password_len = 0;
+    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1] = {0};
+    int32_t ssid_len = 0, password_len = 0, ip_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
 
     root = cJSON_Parse(buffer);
@@ -1181,6 +1181,19 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(password, item->valuestring, password_len);
         }
     }
+
+    item = cJSON_GetObjectItem(root, "webip");
+    if (item) {
+        ip_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webip:%s", item->valuestring);
+        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
+            ESP_LOGE(TAG, "webip is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(ip, item->valuestring, ip_len);
+        }
+    }
+
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
