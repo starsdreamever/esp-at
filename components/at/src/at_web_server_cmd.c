@@ -1201,7 +1201,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(ip, item->valuestring, ip_len);
         }
     }
-
+/*
     item = cJSON_GetObjectItem(root, "webnm");
     if (item) {
         nm_len = strlen(item->valuestring);
@@ -1225,12 +1225,12 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(gw, item->valuestring, gw_len);
         }
     }
-
+*/
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-//    sta_webinfo.ip.addr = ipaddr_addr(ip);
+    sta_webinfo.ip.addr = ipaddr_addr(ip);
 //    sta_webinfo.netmask.addr = ipaddr_addr(nm);
 //    sta_webinfo.gw.addr = ipaddr_addr(gw);
 
