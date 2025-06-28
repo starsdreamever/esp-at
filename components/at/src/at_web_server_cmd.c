@@ -111,6 +111,7 @@ extern void at_wifi_reconnect_init(bool force);
 extern esp_err_t at_wifi_connect(void);
 extern esp_err_t at_wifi_disconnect(void);
 extern esp_err_t at_wifi_scan_start(const wifi_scan_config_t *config, bool block);
+static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t sta_ip);
 
 typedef struct router_obj {
     uint8_t ssid[32];
@@ -167,6 +168,7 @@ static const char *s_ota_receive_success_response = "+WEBSERVERRSP:4\r\n";
 static const char *s_ota_receive_fail_response = "+WEBSERVERRSP:5\r\n";
 static SLIST_HEAD(router_fail_list_head_, router_obj) s_router_fail_list = SLIST_HEAD_INITIALIZER(s_router_fail_list);
 static const char *TAG = "at web";
+
 
 // AT web can use fatfs to storge html or use embeded file to storge html.
 // If use fatfs,we should enable AT FS Command support.
@@ -1143,6 +1145,64 @@ err:
     return ESP_FAIL;
 }
 
+static esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t sta_ip)
+{
+    char ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0}, gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT];
+    int32_t ip_len = 0, nm_len = 0, gw_len = 0;
+    cJSON *root = NULL, *item = NULL, *value_item = NULL;
+
+    root = cJSON_Parse(buffer);
+    if (!root) {
+        ESP_LOGE(TAG, "Invalid format: [%s]", cJSON_GetErrorPtr());
+        return ESP_FAIL;
+    }
+
+    int json_item_num = cJSON_GetArraySize(root);
+    ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
+
+    item = cJSON_GetObjectItem(root, "webip");
+    if (item) {
+        ip_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "ip:%s", item->valuestring);
+        if (ssid_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+            ESP_LOGE(TAG, "ip is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(ip, item->valuestring, ip_len);
+        }
+    }
+
+   item = cJSON_GetObjectItem(root, "webnm");
+    if (item) {
+        nm_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webnm:%s", item->valuestring);
+        if (nm_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+            ESP_LOGE(TAG, "webnm is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(nm, item->valuestring, nm_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webgw");
+    if (item) {
+        gw_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webgw:%s", item->valuestring);
+        if (gw_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+            ESP_LOGE(TAG, "webgw is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(gw, item->valuestring, gw_len);
+        }
+    cJSON_Delete(root);
+
+//    memcpy(config->ssid, ssid, ssid_len);
+//    memcpy(config->password, password, password_len);
+//    memcpy(config->password, password, password_len);
+
+    return ESP_OK;
+}
+
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
     char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1] = {0};
@@ -1201,7 +1261,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     return ESP_OK;
 }
-
+//配网事件，修改ip添加在这里
 static esp_err_t config_wifi_post_handler(httpd_req_t *req)
 {
     char *buf = ((web_server_context_t*) (req->user_ctx))->scratch;
