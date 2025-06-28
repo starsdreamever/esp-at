@@ -1072,6 +1072,11 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
             esp_at_port_active_write_data((uint8_t*)s_wifi_conncet_finish_response, strlen(s_wifi_conncet_finish_response));
         } else { // connect ok
             ESP_LOGI(TAG, "Connect router success");
+
+            if (esp_netif_set_ip_info(netif, &sta_webinfo) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to set ip info");
+            }
+           
             ret = esp_netif_get_ip_info(sta_if, &sta_ip);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "get sta ip fail");
@@ -1206,7 +1211,7 @@ esp_err_t at_get_web_info_from_json_str(char *buffer, esp_netif_ip_info_t *sta_w
 */
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
-    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1] = {0};
+    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0};
     int32_t ssid_len = 0, password_len = 0, ip_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
 
@@ -1247,11 +1252,35 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         ip_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webip:%s", item->valuestring);
-        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT + 1) {
+        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
             ESP_LOGE(TAG, "webip is too long");
             return ESP_FAIL;
         } else {
             strncpy(ip, item->valuestring, ip_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webnm");
+    if (item) {
+        nm_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webnm:%s", item->valuestring);
+        if (nm_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+            ESP_LOGE(TAG, "webnm is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(nm, item->valuestring, nm_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webgw");
+    if (item) {
+        gw_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webgw:%s", item->valuestring);
+        if (gw_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+            ESP_LOGE(TAG, "webgw is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(gw, item->valuestring, gw_len);
         }
     }
 
@@ -1260,6 +1289,9 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
     sta_webinfo.ip.addr = ipaddr_addr(ip);
+    sta_webinfo.netmask.addr = ipaddr_addr(nm);
+    sta_webinfo.gw.addr = ipaddr_addr(gw);
+
     return ESP_OK;
 }
 //配网事件，修改ip添加在这里
