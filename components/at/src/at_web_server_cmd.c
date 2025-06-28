@@ -1230,9 +1230,9 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-    sta_webinfo.ip.addr = ipaddr_addr(ip);
-    sta_webinfo.netmask.addr = ipaddr_addr(nm);
-    sta_webinfo.gw.addr = ipaddr_addr(gw);
+//    sta_webinfo.ip.addr = ipaddr_addr(ip);
+//    sta_webinfo.netmask.addr = ipaddr_addr(nm);
+//    sta_webinfo.gw.addr = ipaddr_addr(gw);
 
     return ESP_OK;
 }
