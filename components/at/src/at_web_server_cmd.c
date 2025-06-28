@@ -1259,7 +1259,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-//    sta_webinfo.ip = ipaddr_addr(ip);
+    sta_webinfo.ip.addr = ipaddr_addr(ip);
     return ESP_OK;
 }
 //配网事件，修改ip添加在这里
