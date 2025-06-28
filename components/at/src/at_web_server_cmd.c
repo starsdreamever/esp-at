@@ -1073,7 +1073,7 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
         } else { // connect ok
             ESP_LOGI(TAG, "Connect router success");
 
-            if (esp_netif_set_ip_info(netif, &sta_webinfo) != ESP_OK) {
+            if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to set ip info");
             }
            
