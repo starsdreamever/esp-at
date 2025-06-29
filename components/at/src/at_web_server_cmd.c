@@ -255,6 +255,13 @@ static esp_err_t at_web_try_connect(uint8_t *ssid, uint8_t *password, uint8_t *b
         }
     } else { // don't need to wait wifi connect result
         printf("connect config finish\r\n");
+        
+        esp_netif_ip_info_t sta_ip = {0};
+        esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+            if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to set ip info");
+            }
+
     }
     return ret;
 }
@@ -1071,10 +1078,6 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
             esp_at_port_active_write_data((uint8_t*)s_wifi_conncet_finish_response, strlen(s_wifi_conncet_finish_response));
         } else { // connect ok
             ESP_LOGI(TAG, "Connect router success");
-
-            if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to set ip info");
-            }
            
             ret = esp_netif_get_ip_info(sta_if, &sta_ip);
             if (ret != ESP_OK) {
