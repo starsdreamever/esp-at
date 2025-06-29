@@ -1211,6 +1211,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     item = cJSON_GetObjectItem(root, "webnm");
     if (item) {
         nm_len = strlen(item->valuestring);
+        printf("webnm:%s len=%d\r\n", item->valuestring,nm_len);
         ESP_LOGD(TAG, "webnm:%s", item->valuestring);
         if (nm_len > 32) {
             ESP_LOGE(TAG, "webnm is too long");
@@ -1223,6 +1224,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     item = cJSON_GetObjectItem(root, "webgw");
     if (item) {
         gw_len = strlen(item->valuestring);
+        printf("webgw:%s len=%d\r\n", item->valuestring,gw_len);
         ESP_LOGD(TAG, "webgw:%s", item->valuestring);
         if (gw_len > 32) {
             ESP_LOGE(TAG, "webgw is too long");
@@ -1252,8 +1254,9 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
         ESP_LOGE(TAG, "Failed to set ip info");
     }
     printf("set ip:" IPSTR, IP2STR(&sta_webinfo.ip));
+    printf("set netmask:" IPSTR, IP2STR(&sta_webinfo.netmask));
+    printf("set gw:" IPSTR, IP2STR(&sta_webinfo.gw));
 
-    printf("ip: %d ,netmask: %d,gw: %d\r\n",sta_webinfo.ip.addr,sta_webinfo.netmask.addr,sta_webinfo.netmask.addr);
 
 
 
