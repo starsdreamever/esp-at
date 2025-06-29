@@ -1236,11 +1236,11 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
-    memcpy(confip->ip, ip, ip_len);
-    memcpy(confip->nm, nm, nm_len);
-    memcpy(confip->gw, gw, gw_len);
+//    memcpy(confip->ip, ip, ip_len);
+//    memcpy(confip->nm, nm, nm_len);
+//    memcpy(confip->gw, gw, gw_len);
 
-    memcpy(&s_wifi_sta_connect_ipcon, confip, sizeof(wifi_sta_connect_ipcon_t));
+//    memcpy(&s_wifi_sta_connect_ipcon, confip, sizeof(wifi_sta_connect_ipcon_t));
 
     sta_webinfo.ip.addr = inet_addr(ip);
     sta_webinfo.netmask.addr = inet_addr(nm);
