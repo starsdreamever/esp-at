@@ -1165,6 +1165,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         ssid_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "ssid:%s", item->valuestring);
+        printf("ssid:%s", item->valuestring);
         if (ssid_len > 32) {
             ESP_LOGE(TAG, "ssid is too long");
             return ESP_FAIL;
@@ -1177,6 +1178,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         password_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "password:%s", item->valuestring);
+        printf("password:%s", item->valuestring);
         if (password_len > 64) {
             ESP_LOGE(TAG, "password is too long");
             return ESP_FAIL;
