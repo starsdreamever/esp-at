@@ -1186,7 +1186,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         password_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "password:%s", item->valuestring);
-        printf("password:%s\r\n", item->valuestring);
+        printf("password:%s len=%d\r\n", item->valuestring,password_len);
         if (password_len > 64) {
             ESP_LOGE(TAG, "password is too long");
             return ESP_FAIL;
@@ -1199,7 +1199,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         ip_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webip:%s", item->valuestring);
-        printf("webip:%s\r\n", item->valuestring);
+        printf("webip:%s len=%d\r\n", item->valuestring,ip_len);
         if (ip_len > 32) {
             ESP_LOGE(TAG, "webip is too long");
             return ESP_FAIL;
