@@ -1158,6 +1158,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0};
     int32_t ssid_len = 0, password_len = 0, ip_len = 0, nm_len = 0, gw_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
+    wifi_sta_connect_ipcon_t *confip;
 
     root = cJSON_Parse(buffer);
     if (!root) {
@@ -1167,7 +1168,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     int json_item_num = cJSON_GetArraySize(root);
     ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
-
+    printf("%d,root:%s",json_item_num,root)
     item = cJSON_GetObjectItem(root, "ssid");
     if (item) {
         ssid_len = strlen(item->valuestring);
@@ -1235,6 +1236,12 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
+    memcpy(confip->ip, ip, ip_len);
+    memcpy(confip->nm, nm, nm_len);
+    memcpy(confip->gw, gw, gw_len);
+
+    memcpy(&s_wifi_sta_connect_ipcon, confip, sizeof(wifi_sta_connect_ipcon_t));
+
     sta_webinfo.ip.addr = inet_addr(ip);
     sta_webinfo.netmask.addr = inet_addr(nm);
     sta_webinfo.gw.addr = inet_addr(gw);
