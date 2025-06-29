@@ -1071,11 +1071,6 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
             esp_at_port_active_write_data((uint8_t*)s_wifi_conncet_finish_response, strlen(s_wifi_conncet_finish_response));
         } else { // connect ok
             ESP_LOGI(TAG, "Connect router success");
-
-            if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to set ip info");
-            }
-            printf("got ip:" IPSTR, IP2STR(&sta_webinfo.ip));
            
             ret = esp_netif_get_ip_info(sta_if, &sta_ip);
             if (ret != ESP_OK) {
@@ -1194,6 +1189,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         ip_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webip:%s", item->valuestring);
+        printf("webip:%s", item->valuestring);
         if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
             ESP_LOGE(TAG, "webip is too long");
             return ESP_FAIL;
@@ -1233,6 +1229,14 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     sta_webinfo.ip.addr = inet_addr(ip);
     sta_webinfo.netmask.addr = inet_addr(nm);
     sta_webinfo.gw.addr = inet_addr(gw);
+
+    esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    esp_netif_dhcpc_stop(sta_if);
+    if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+    }
+    printf("set ip:" IPSTR, IP2STR(&sta_webinfo.ip));
+
     printf("ip: %d ,netmask: %d,gw: %d\r\n",sta_webinfo.ip.addr,sta_webinfo.netmask.addr,sta_webinfo.netmask.addr);
 
 
