@@ -1386,7 +1386,7 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     json_len += sprintf(temp_json_str + json_len, "\"sta_webip\":\"");
     int32_t webip_len = strlen((char *)(connect_confip->ip));
     for (int i = 0; i < webip_len; i++) {
-        uint8_t c = connect_config->ip[i];
+        uint8_t c = connect_confip->ip[i];
         if (c == '\\' || c == '\"' || c == '/') {
             json_len += sprintf(temp_json_str + json_len, "\\");
         }
@@ -1399,7 +1399,7 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     json_len += sprintf(temp_json_str + json_len, "\"sta_webnm\":\"");
     int32_t webnm_len = strlen((char *)(connect_confip->nm));
     for (int i = 0; i < webnm_len; i++) {
-        uint8_t c = connect_config->nm[i];
+        uint8_t c = connect_confip->nm[i];
         if (c == '\\' || c == '\"' || c == '/') {
             json_len += sprintf(temp_json_str + json_len, "\\");
         }
@@ -1412,7 +1412,7 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     json_len += sprintf(temp_json_str + json_len, "\"sta_webgw\":\"");
     int32_t webgw_len = strlen((char *)(connect_confip->gw));
     for (int i = 0; i < webgw_len; i++) {
-        uint8_t c = connect_config->gw[i];
+        uint8_t c = connect_confip->gw[i];
         if (c == '\\' || c == '\"' || c == '/') {
             json_len += sprintf(temp_json_str + json_len, "\\");
         }
