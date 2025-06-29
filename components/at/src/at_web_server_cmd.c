@@ -1168,7 +1168,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     int json_item_num = cJSON_GetArraySize(root);
     ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
-    printf("%d,root:%s",json_item_num,root)
+    printf("%d,root:%s",json_item_num,root);
     item = cJSON_GetObjectItem(root, "ssid");
     if (item) {
         ssid_len = strlen(item->valuestring);
