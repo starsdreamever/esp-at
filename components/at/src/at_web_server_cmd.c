@@ -255,11 +255,15 @@ static esp_err_t at_web_try_connect(uint8_t *ssid, uint8_t *password, uint8_t *b
         }
     } else { // don't need to wait wifi connect result
         printf("connect config finish\r\n");
-        
+
         esp_netif_ip_info_t sta_ip = {0};
         esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
             if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to set ip info");
+            }
+            else
+            {
+
             }
 
     }
@@ -530,6 +534,7 @@ static esp_err_t at_web_start_scan_filter(uint8_t *phone_mac, uint8_t *password,
                     if (check_fail_list(item->mac)) { // ignore fail connect mac
                         try_connect_count++;
                         ret = at_web_try_connect(item->ssid, password, item->mac, connect_event);
+                        ESP_LOGW(TAG, "try 1");
                         if (ret != ESP_OK) {
                             ESP_LOGW(TAG, "match mac connect error");
                             SLIST_REMOVE(&s_router_all_list, item, router_obj, next);
@@ -555,6 +560,7 @@ static esp_err_t at_web_start_scan_filter(uint8_t *phone_mac, uint8_t *password,
                     if (check_fail_list(item->mac)) {
                         try_connect_count++;
                         ret = at_web_try_connect(item->ssid, password, item->mac, connect_event);
+                        ESP_LOGW(TAG, "try 2");
                         if (ret != ESP_OK) {
                             ESP_LOGW(TAG, "virtual mac connect error");
                             SLIST_REMOVE(&s_router_all_list, item, router_obj, next);
@@ -583,6 +589,7 @@ static esp_err_t at_web_start_scan_filter(uint8_t *phone_mac, uint8_t *password,
                     ESP_LOGI(TAG, "Try to connect highest rssi ssid %s, rssi: %d", head_item->ssid, head_item->rssi);
                     try_connect_count++;
                     ret = at_web_try_connect(head_item->ssid, password, head_item->mac, connect_event);
+                    ESP_LOGW(TAG, "try 3");
                     if (ret != ESP_OK) {
                         ESP_LOGW(TAG, "rssi connect error");
                         SLIST_REMOVE(&s_router_all_list, head_item, router_obj, next);
@@ -1020,6 +1027,7 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
     if ((strlen((char *)connect_config->ssid) != 0) || (udp_port == -1)) {
         ESP_LOGI(TAG, "Use SSID %s direct connect", (char *)connect_config->ssid);
         ret = at_web_try_connect(connect_config->ssid, connect_config->password, NULL, NULL);
+        ESP_LOGW(TAG, "try 4");
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Apply connect fail");
             goto err;
