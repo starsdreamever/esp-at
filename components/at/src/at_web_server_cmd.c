@@ -130,6 +130,12 @@ typedef struct {
     uint8_t password[65];
 } wifi_sta_connect_config_t;
 
+typedef struct {
+    uint8_t ip[33];
+    uint8_t nm[33];
+    uint8_t gw[33];
+} wifi_sta_connect_ipcon_t;
+
 typedef enum {
     ESP_AT_WIFI_STA_NOT_START = 0x0,
     ESP_AT_WIFI_STA_CONFIG_DONE = 0x1,
@@ -157,6 +163,7 @@ static httpd_handle_t s_server = NULL;
 static int32_t s_at_web_wifi_reconnect_timeout = ESP_AT_WEB_WIFI_MAX_RECONNECT_TIMEOUT;
 static wifi_sta_connection_info_t s_wifi_sta_connection_info = {0};
 static wifi_sta_connect_config_t s_wifi_sta_connect_config = {0};
+static wifi_sta_connect_ipcon_t s_wifi_sta_connect_ipcon = {0};
 static TimerHandle_t s_wifi_sta_connect_timer_handler = NULL;
 static EventGroupHandle_t s_wifi_sta_connect_event_group = NULL;
 static uint8_t s_mobile_phone_mac[6] = {0};
@@ -1192,7 +1199,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
         ip_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webip:%s", item->valuestring);
         printf("webip:%s", item->valuestring);
-        if (ip_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+        if (ip_len > 32) {
             ESP_LOGE(TAG, "webip is too long");
             return ESP_FAIL;
         } else {
@@ -1204,7 +1211,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         nm_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webnm:%s", item->valuestring);
-        if (nm_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+        if (nm_len > 32) {
             ESP_LOGE(TAG, "webnm is too long");
             return ESP_FAIL;
         } else {
@@ -1216,7 +1223,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         gw_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "webgw:%s", item->valuestring);
-        if (gw_len > ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT) {
+        if (gw_len > 32) {
             ESP_LOGE(TAG, "webgw is too long");
             return ESP_FAIL;
         } else {
@@ -1331,6 +1338,7 @@ error_handle:
 static esp_err_t config_wifi_get_handler(httpd_req_t *req)
 {
     wifi_sta_connect_config_t *connect_config = at_web_get_sta_connect_config();
+    wifi_sta_connect_ipcon_t *connect_confip = &s_wifi_sta_connect_ipcon;
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     char temp_str[32] = {0};
     int32_t json_len = 0;
@@ -1366,6 +1374,45 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     int32_t password_len = strlen((char *)(connect_config->password));
     for (int i = 0; i < password_len; i++) {
         uint8_t c = connect_config->password[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
+    // add webip to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webip\":\"");
+    int32_t webip_len = strlen((char *)(connect_confip->ip));
+    for (int i = 0; i < webip_len; i++) {
+        uint8_t c = connect_config->ip[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
+    // add webnm to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webnm\":\"");
+    int32_t webnm_len = strlen((char *)(connect_confip->nm));
+    for (int i = 0; i < webnm_len; i++) {
+        uint8_t c = connect_config->nm[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
+    // add webgw to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webgw\":\"");
+    int32_t webgw_len = strlen((char *)(connect_confip->gw));
+    for (int i = 0; i < webgw_len; i++) {
+        uint8_t c = connect_config->gw[i];
         if (c == '\\' || c == '\"' || c == '/') {
             json_len += sprintf(temp_json_str + json_len, "\\");
         }
