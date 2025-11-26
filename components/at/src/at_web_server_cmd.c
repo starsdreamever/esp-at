@@ -1553,7 +1553,14 @@ static esp_err_t ap_record_get_handler(httpd_req_t *req)
                 }
                 json_len += sprintf(temp_json_str + json_len, "%c", c);
             }
-            json_len += sprintf(temp_json_str + json_len, "%d", ap_info[loop].rssi);
+            int32_t rssi_len = strlen((const char*)ap_info[loop].rssi);
+            for (int i = 0; i < rssi_len; i++) {
+                uint8_t c = ap_info[loop].rssi[i];
+                // escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+               
+                json_len += sprintf(temp_json_str + json_len, "%c", c);
+            }
+
             json_len += sprintf(temp_json_str + json_len, "\",\"auth_mode\":%d},", ap_info[loop].authmode);
 
             valid_ap_count++;
