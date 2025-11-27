@@ -1511,7 +1511,7 @@ error_handle:
     at_web_response_error(req, HTTPD_400);
     return ESP_FAIL;
 }
-//获取ap列表
+
 static esp_err_t ap_record_get_handler(httpd_req_t *req)
 {
     uint16_t ap_number = ESP_AT_WEB_AP_SCAN_NUM_DEFAULT;
@@ -1553,8 +1553,6 @@ static esp_err_t ap_record_get_handler(httpd_req_t *req)
                 }
                 json_len += sprintf(temp_json_str + json_len, "%c", c);
             }
-//            json_len += sprintf(temp_json_str + json_len, "\"%d\"", ap_info[loop].rssi);
-
             json_len += sprintf(temp_json_str + json_len, "\",\"auth_mode\":%d},", ap_info[loop].authmode);
 
             valid_ap_count++;
