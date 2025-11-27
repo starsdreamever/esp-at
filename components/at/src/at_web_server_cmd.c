@@ -1553,6 +1553,7 @@ static esp_err_t ap_record_get_handler(httpd_req_t *req)
                 }
                 json_len += sprintf(temp_json_str + json_len, "%c", c);
             }
+            json_len += sprintf(temp_json_str + json_len, "%d", loop);
             json_len += sprintf(temp_json_str + json_len, "\",\"auth_mode\":%d},", ap_info[loop].authmode);
 
             valid_ap_count++;
