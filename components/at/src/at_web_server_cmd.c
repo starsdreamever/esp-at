@@ -1322,6 +1322,7 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     }
     json_len += sprintf(temp_json_str + json_len, "\"message\":\"%s\"}", temp_str);
 
+//test
     ESP_LOGD(TAG, "now wifi get json str is %s\n", temp_json_str);
     httpd_resp_send(req, temp_json_str, (temp_json_str == NULL) ? 0 : strlen(temp_json_str));
 
