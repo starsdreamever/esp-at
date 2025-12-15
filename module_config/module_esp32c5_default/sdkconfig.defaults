@@ -1,7 +1,7 @@
 # The Optimized Configuration
 # Do NOT edit unless you know exactly what you are doing
 
-CONFIG_IDF_TARGET_ESP32C5=y
+CONFIG_IDF_TARGET_ESP32C5=n
 
 # Serial flasher config
 CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
