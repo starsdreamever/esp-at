@@ -1424,11 +1424,12 @@ static esp_err_t ap_record_get_handler(httpd_req_t *req)
 
     httpd_resp_set_type(req, "application/json");
     json_len += sprintf(temp_json_str + json_len, "{\"state\":0,\"message\":\"scan done\",\"aplist\":["); // to get a json array format str
-
+//SHOW ap list
     for (loop = 0; loop < ap_number; loop++) {
         int32_t ssid_len = strlen((const char*)ap_info[loop].ssid);
         if (ssid_len != 0) { // ingore hidden ssid
             json_len += sprintf(temp_json_str + json_len, "{\"ssid\":\"");
+            json_len += sprintf(temp_json_str + json_len, "%d", ap_info[loop].rssi);
             for (int i = 0; i < ssid_len; i++) {
                 uint8_t c = ap_info[loop].ssid[i];
                 // escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
