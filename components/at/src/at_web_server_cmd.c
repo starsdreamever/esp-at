@@ -1130,8 +1130,8 @@ err:
 
 static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_config_t *config)
 {
-    char ssid[33] = {0}, password[65] = {0};
-    int32_t ssid_len = 0, password_len = 0;
+    char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0};
+    int32_t ssid_len = 0, password_len = 0, ip_len = 0, nm_len = 0, gw_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
 
     root = cJSON_Parse(buffer);
@@ -1166,14 +1166,75 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
             strncpy(password, item->valuestring, password_len);
         }
     }
+
+    item = cJSON_GetObjectItem(root, "webip");
+    if (item) {
+        ip_len = strlen(item->valuestring);
+        ESP_LOGD(TAG, "webip:%s", item->valuestring);
+        printf("webip:%s len=%d\r\n", item->valuestring,ip_len);
+        if (ip_len > 32) {
+            ESP_LOGE(TAG, "webip is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(ip, item->valuestring, ip_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webnm");
+    if (item) {
+        nm_len = strlen(item->valuestring);
+        printf("webnm:%s len=%d\r\n", item->valuestring,nm_len);
+        ESP_LOGD(TAG, "webnm:%s", item->valuestring);
+        if (nm_len > 32) {
+            ESP_LOGE(TAG, "webnm is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(nm, item->valuestring, nm_len);
+        }
+    }
+
+    item = cJSON_GetObjectItem(root, "webgw");
+    if (item) {
+        gw_len = strlen(item->valuestring);
+        printf("webgw:%s len=%d\r\n", item->valuestring,gw_len);
+        ESP_LOGD(TAG, "webgw:%s", item->valuestring);
+        if (gw_len > 32) {
+            ESP_LOGE(TAG, "webgw is too long");
+            return ESP_FAIL;
+        } else {
+            strncpy(gw, item->valuestring, gw_len);
+        }
+    }
+
     cJSON_Delete(root);
 
     memcpy(config->ssid, ssid, ssid_len);
     memcpy(config->password, password, password_len);
+//    memcpy(confip->ip, ip, ip_len);
+//    memcpy(confip->nm, nm, nm_len);
+//    memcpy(confip->gw, gw, gw_len);
+
+//    memcpy(&s_wifi_sta_connect_ipcon, confip, sizeof(wifi_sta_connect_ipcon_t));
+
+    sta_webinfo.ip.addr = inet_addr(ip);
+    sta_webinfo.netmask.addr = inet_addr(nm);
+    sta_webinfo.gw.addr = inet_addr(gw);
+
+    esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    esp_netif_dhcpc_stop(sta_if);
+    if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set ip info");
+    }
+    printf("set ip:" IPSTR, IP2STR(&sta_webinfo.ip));
+    printf("set netmask:" IPSTR, IP2STR(&sta_webinfo.netmask));
+    printf("set gw:" IPSTR, IP2STR(&sta_webinfo.gw));
+
+
+
 
     return ESP_OK;
 }
-
+//配网事件，修改ip添加在这里
 static esp_err_t config_wifi_post_handler(httpd_req_t *req)
 {
     char *buf = ((web_server_context_t*)(req->user_ctx))->scratch;
@@ -1186,8 +1247,8 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     memset(buf, '\0', ESP_AT_WEB_SCRATCH_BUFSIZE * sizeof(char));
     esp_wifi_get_mode(&current_wifi_mode);
-    if (current_wifi_mode != WIFI_MODE_APSTA) {
-        ESP_LOGE(TAG, "invalid wifi mode");
+    if (current_wifi_mode != WIFI_MODE_APSTA && current_wifi_mode != WIFI_MODE_STA) {
+        printf("Error, wifi mode is not correct\r\n");
         goto error_handle;
     }
     // only wifi config not start or have success apply one connection,allow to apply new connect
@@ -1301,6 +1362,45 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     }
     json_len += sprintf(temp_json_str + json_len, "\",");
 
+    // add webip to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webip\":\"");
+    int32_t webip_len = strlen((char *)(connect_confip->ip));
+    for (int i = 0; i < webip_len; i++) {
+        uint8_t c = connect_confip->ip[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
+    // add webnm to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webnm\":\"");
+    int32_t webnm_len = strlen((char *)(connect_confip->nm));
+    for (int i = 0; i < webnm_len; i++) {
+        uint8_t c = connect_confip->nm[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
+    // add webgw to json str
+    // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
+    json_len += sprintf(temp_json_str + json_len, "\"sta_webgw\":\"");
+    int32_t webgw_len = strlen((char *)(connect_confip->gw));
+    for (int i = 0; i < webgw_len; i++) {
+        uint8_t c = connect_confip->gw[i];
+        if (c == '\\' || c == '\"' || c == '/') {
+            json_len += sprintf(temp_json_str + json_len, "\\");
+        }
+        json_len += sprintf(temp_json_str + json_len, "%c", c);
+    }
+    json_len += sprintf(temp_json_str + json_len, "\",");
+
     switch (connection_info->config_status) {
     case ESP_AT_WIFI_STA_NOT_START:
         strcpy(temp_str, "waiting config");
@@ -1395,7 +1495,7 @@ error_handle:
     at_web_response_error(req, HTTPD_400);
     return ESP_FAIL;
 }
-
+//获取ap列表
 static esp_err_t ap_record_get_handler(httpd_req_t *req)
 {
     uint16_t ap_number = ESP_AT_WEB_AP_SCAN_NUM_DEFAULT;
