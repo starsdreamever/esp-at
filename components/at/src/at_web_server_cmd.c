@@ -156,7 +156,8 @@ static const char *s_ota_start_response = "+WEBSERVERRSP:3\r\n";
 static const char *s_ota_receive_success_response = "+WEBSERVERRSP:4\r\n";
 static const char *s_ota_receive_fail_response = "+WEBSERVERRSP:5\r\n";
 static SLIST_HEAD(router_fail_list_head_, router_obj) s_router_fail_list = SLIST_HEAD_INITIALIZER(s_router_fail_list);
-static const char *TAG = "at-web";
+static const char *TAG = "at web";
+
 
 // AT web can use fatfs to storge html or use embeded file to storge html.
 // If use fatfs,we should enable AT FS Command support.
@@ -299,13 +300,12 @@ static bool check_fail_list(uint8_t *bssid)
 
 static esp_err_t stop_scan_filter(void)
 {
-    router_obj_t *item;
-    while (!SLIST_EMPTY(&s_router_fail_list)) {
-        item = SLIST_FIRST(&s_router_fail_list);
-        SLIST_REMOVE(&s_router_fail_list, item, router_obj, next);
-        free(item);
+    if (!SLIST_EMPTY(&s_router_fail_list)) {
+        for (router_obj_t *fail_item = SLIST_FIRST(&s_router_fail_list); fail_item != NULL; fail_item = SLIST_NEXT(fail_item, next)) {
+            SLIST_REMOVE(&s_router_fail_list, fail_item, router_obj, next);
+            free(fail_item);
     }
-    SLIST_INIT(&s_router_fail_list);
+    }
     return ESP_OK;
 }
 
@@ -585,9 +585,8 @@ static esp_err_t at_web_start_scan_filter(uint8_t *phone_mac, uint8_t *password,
         }
 #endif
         // delete scan list
-        while (!SLIST_EMPTY(&s_router_all_list)) {
-            ESP_LOGD(TAG, "Delete SSID: %.*s", sizeof(item->ssid), item->ssid);
-            item = SLIST_FIRST(&s_router_all_list);
+        for (item = SLIST_FIRST(&s_router_all_list); item != NULL; item = SLIST_NEXT(item, next)) {
+            ESP_LOGD(TAG, "Delete SSID:%s", item->ssid);
             SLIST_REMOVE(&s_router_all_list, item, router_obj, next);
             free(item);
         }
@@ -608,8 +607,8 @@ static esp_err_t at_web_start_scan_filter(uint8_t *phone_mac, uint8_t *password,
             ESP_LOGI(TAG, "scan and try connect use time is %d", (int32_t)((end - start) / 1000));
             current_available_time -= ((end - start) / 1000);
         } else if (end < start) {
-            ESP_LOGI(TAG, "scan and try connect use time is %d", (int32_t)((end + 0xFFFFFFFFUL - start) / 1000));
-            current_available_time -= ((end + 0xFFFFFFFFUL - start) / 1000);
+            ESP_LOGI(TAG, "scan and try connect use time is %d", (int32_t)((end + 0xFFFFFFFFUL - start)/ 1000));
+            current_available_time -= ((end + 0xFFFFFFFFUL - start)/ 1000);
         } else {
             ESP_LOGE(TAG, "time interval fatal error");
             break;
@@ -884,7 +883,6 @@ static void listen_sta_connect_status_timer_cb(TimerHandle_t timer)
     } else {
         ESP_LOGW(TAG, "Listen connect %d times and connect fail", connect_count);
         connection_info.config_status = ESP_AT_WIFI_STA_CONNECT_FAIL;
-        at_wifi_reconnect_stop();
         goto connect_finish;
     }
     return;
@@ -893,6 +891,7 @@ connect_finish:
     connect_count = 1;
     at_web_update_sta_got_ip_flag(false);
     at_web_update_sta_connection_info(&connection_info);
+    at_wifi_reconnect_stop();
     xTimerStop(s_wifi_sta_connect_timer_handler, portMAX_DELAY);
     xTimerDelete(s_wifi_sta_connect_timer_handler, portMAX_DELAY);
 }
@@ -948,7 +947,7 @@ static int readable_check(int fd, int sec, int usec)
     tv.tv_sec = sec;
     tv.tv_usec = usec;
     /* > 0 if descriptor is readable */
-    return (select(fd + 1, &rset, NULL, NULL, &tv));
+    return(select(fd + 1, &rset, NULL, NULL, &tv));
 }
 
 static void listen_sta_connect_success_timer_cb(TimerHandle_t timer)
@@ -1062,6 +1061,7 @@ static esp_err_t at_web_apply_wifi_connect_info(int32_t udp_port)
             esp_at_port_active_write_data((uint8_t*)s_wifi_conncet_finish_response, strlen(s_wifi_conncet_finish_response));
         } else { // connect ok
             ESP_LOGI(TAG, "Connect router success");
+           
             ret = esp_netif_get_ip_info(sta_if, &sta_ip);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "get sta ip fail");
@@ -1151,11 +1151,12 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 
     int json_item_num = cJSON_GetArraySize(root);
     ESP_LOGD(TAG, "Total JSON Items:%d", json_item_num);
-
+    printf("%d,root:%s\r\n",json_item_num,&root);
     item = cJSON_GetObjectItem(root, "ssid");
     if (item) {
         ssid_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "ssid:%s", item->valuestring);
+        printf("ssid:%s", item->valuestring);
         if (ssid_len > 32) {
             ESP_LOGE(TAG, "ssid is too long");
             return ESP_FAIL;
@@ -1168,6 +1169,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     if (item) {
         password_len = strlen(item->valuestring);
         ESP_LOGD(TAG, "password:%s", item->valuestring);
+        printf("password:%s len=%d\r\n", item->valuestring,password_len);
         if (password_len > 64) {
             ESP_LOGE(TAG, "password is too long");
             return ESP_FAIL;
@@ -1246,7 +1248,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
 //配网事件，修改ip添加在这里
 static esp_err_t config_wifi_post_handler(httpd_req_t *req)
 {
-    char *buf = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *buf = ((web_server_context_t*) (req->user_ctx))->scratch;
     wifi_sta_connect_config_t wifi_config = {0};
     int str_len = 0;
     int32_t udp_port = -1;
@@ -1256,8 +1258,8 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     memset(buf, '\0', ESP_AT_WEB_SCRATCH_BUFSIZE * sizeof(char));
     esp_wifi_get_mode(&current_wifi_mode);
-    if (current_wifi_mode != WIFI_MODE_APSTA) {
-        ESP_LOGE(TAG, "invalid wifi mode");
+    if (current_wifi_mode != WIFI_MODE_APSTA && current_wifi_mode != WIFI_MODE_STA) {
+        printf("Error, wifi mode is not correct\r\n");
         goto error_handle;
     }
     // only wifi config not start or have success apply one connection,allow to apply new connect
@@ -1281,7 +1283,7 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
         if (strlen((char *)&wifi_config.ssid) == 0) {
             ssid_is_null = true;
         }
-        if ((ssid_is_null == true) && (strlen((char *)&wifi_config.password) == 0)) {
+        if ((ssid_is_null == true) && (strlen((char*)&wifi_config.password) == 0)) {
             ESP_LOGE(TAG, "Error, ssid and password all is null");
             goto error_handle;
         }
@@ -1301,7 +1303,7 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
         at_web_update_sta_connect_config(&wifi_config);
 
         at_web_response_ok(req);
-        vTaskDelay(300 / portTICK_PERIOD_MS); // to avoid wifi ap channel changed so quickly that the response can not be sent.
+        vTaskDelay(300/portTICK_PERIOD_MS); // to avoid wifi ap channel changed so quickly that the response can not be sent.
         // begin connect
         if (ssid_is_null != true) {
             if (at_web_apply_wifi_connect_info(udp_port) != ESP_OK) {
@@ -1333,7 +1335,7 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     char temp_str[32] = {0};
     int32_t json_len = 0;
-    char *temp_json_str = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *temp_json_str = ((web_server_context_t*) (req->user_ctx))->scratch;
 
     httpd_resp_set_type(req, "application/json");
 
@@ -1432,7 +1434,6 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
     }
     json_len += sprintf(temp_json_str + json_len, "\"message\":\"%s\"}", temp_str);
 
-//test
     ESP_LOGD(TAG, "now wifi get json str is %s\n", temp_json_str);
     httpd_resp_send(req, temp_json_str, (temp_json_str == NULL) ? 0 : strlen(temp_json_str));
 
@@ -1453,7 +1454,7 @@ static esp_err_t at_web_version_get_handler(httpd_req_t *req)
 
 static esp_err_t accept_wifi_result_post_handler(httpd_req_t *req)
 {
-    char *buf = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *buf = ((web_server_context_t*) (req->user_ctx))->scratch;
     int32_t received_flag;
     char temp[4] = {0};
     int str_len = 0;
@@ -1539,7 +1540,7 @@ static esp_err_t ap_record_get_handler(httpd_req_t *req)
         int32_t ssid_len = strlen((const char*)ap_info[loop].ssid);
         if (ssid_len != 0) { // ingore hidden ssid
             json_len += sprintf(temp_json_str + json_len, "{\"ssid\":\"");
-//            json_len += sprintf(temp_json_str + json_len, "%d ", ap_info[loop].rssi);
+            json_len += sprintf(temp_json_str + json_len, "%d ", ap_info[loop].rssi);
             for (int i = 0; i < ssid_len; i++) {
                 uint8_t c = ap_info[loop].ssid[i];
                 // escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
@@ -1615,7 +1616,7 @@ esp_err_t at_web_ota_end(esp_ota_handle_t handle, const esp_partition_t *partiti
 
 static esp_err_t ota_upgrade(httpd_req_t *req)
 {
-    char *buf = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *buf = ((web_server_context_t*) (req->user_ctx))->scratch;
     int total_len = req->content_len;
     int remaining_len = req->content_len;
     int received_len = 0;
@@ -1647,7 +1648,7 @@ static esp_err_t ota_upgrade(httpd_req_t *req)
             ESP_LOGE(TAG, "Failed to receive post ota data, err = %d", received_len);
             esp_ota_end(update_handle);
             goto err_handler;
-        } else { // received successfully
+        }else { // received successfully
             err = esp_ota_write(update_handle, buf, received_len);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "ota write failed (%s)", esp_err_to_name(err));
@@ -1729,7 +1730,7 @@ static esp_err_t partition_upgrade(httpd_req_t *req, char *buf, const int total_
 static esp_err_t at_customize_partition_upgrade(httpd_req_t *req, const char* partition_name)
 {
     esp_err_t err = ESP_OK;
-    char *buf = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *buf = ((web_server_context_t*) (req->user_ctx))->scratch;
     int total_len = req->content_len;
 
     err = partition_upgrade(req, buf, total_len, partition_name);
@@ -1753,7 +1754,7 @@ static esp_err_t ota_info_get_handler(httpd_req_t *req)
     uint32_t version_uint32 =  esp_at_get_version();
     int32_t json_len = 0;
     uint8_t version[4] = {0};
-    char *temp_json_str = ((web_server_context_t*)(req->user_ctx))->scratch;
+    char *temp_json_str = ((web_server_context_t*) (req->user_ctx))->scratch;
     esp_partition_t *cur_partition = NULL;
 
     memcpy(version, &version_uint32, sizeof(version_uint32));
@@ -1765,7 +1766,7 @@ static esp_err_t ota_info_get_handler(httpd_req_t *req)
 
     // OTA information
     json_len += sprintf(temp_json_str + json_len, "\"state\":0,"); // it means http context OK
-    json_len += sprintf(temp_json_str + json_len, "\"fw_version\":\"%s\",", CONFIG_APP_PROJECT_VER); // it means http context OK
+    json_len += sprintf(temp_json_str + json_len, "\"fw_version\":\"%s\",", CONFIG_ESP_AT_FW_VERSION); // it means http context OK
     json_len += sprintf(temp_json_str + json_len, "\"at_core_version\":\"%d.%d.%d.%d\",", version[3], version[2], version[1], version[0]);
 
     // partition information array start
@@ -1885,7 +1886,7 @@ static esp_err_t start_web_server(const char *base_path, uint16_t server_port)
         {"/getaprecord", HTTP_GET, ap_record_get_handler, s_web_context},
         {"/getotainfo", HTTP_GET, ota_info_get_handler, s_web_context},
         {"/setotadata", HTTP_POST, ota_data_post_handler, s_web_context},
-        {"/", HTTP_GET, web_common_get_handler, s_web_context},
+        {"/", HTTP_GET, web_common_get_handler,s_web_context},
     };
 
     for (int i = 0; i < sizeof(httpd_uri_array) / sizeof(httpd_uri_t); i++) {
