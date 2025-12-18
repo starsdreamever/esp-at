@@ -93,6 +93,7 @@ extern void at_wifi_reconnect_init(bool force);
 extern esp_err_t at_wifi_connect(void);
 extern esp_err_t at_wifi_disconnect(void);
 extern esp_err_t at_wifi_scan_start(const wifi_scan_config_t *config, bool block);
+esp_netif_ip_info_t sta_webinfo;
 
 typedef struct router_obj {
     uint8_t ssid[32];
@@ -110,6 +111,12 @@ typedef struct {
     uint8_t ssid[33];
     uint8_t password[65];
 } wifi_sta_connect_config_t;
+
+typedef struct {
+    uint8_t ip[33];
+    uint8_t nm[33];
+    uint8_t gw[33];
+} wifi_sta_connect_ipcon_t;
 
 typedef enum {
     ESP_AT_WIFI_STA_NOT_START = 0x0,
@@ -138,6 +145,7 @@ static httpd_handle_t s_server = NULL;
 static int32_t s_at_web_wifi_reconnect_timeout = ESP_AT_WEB_WIFI_MAX_RECONNECT_TIMEOUT;
 static wifi_sta_connection_info_t s_wifi_sta_connection_info = {0};
 static wifi_sta_connect_config_t s_wifi_sta_connect_config = {0};
+static wifi_sta_connect_ipcon_t s_wifi_sta_connect_ipcon = {0};
 static TimerHandle_t s_wifi_sta_connect_timer_handler = NULL;
 static EventGroupHandle_t s_wifi_sta_connect_event_group = NULL;
 static uint8_t s_mobile_phone_mac[6] = {0};
@@ -1133,6 +1141,7 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     char ssid[33] = {0}, password[65] = {0},ip[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},nm[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0},gw[ESP_AT_WEB_IPV4_MAX_IP_LEN_DEFAULT] = {0};
     int32_t ssid_len = 0, password_len = 0, ip_len = 0, nm_len = 0, gw_len = 0;
     cJSON *root = NULL, *item = NULL, *value_item = NULL;
+    wifi_sta_connect_ipcon_t *confip;
 
     root = cJSON_Parse(buffer);
     if (!root) {
@@ -1247,8 +1256,8 @@ static esp_err_t config_wifi_post_handler(httpd_req_t *req)
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     memset(buf, '\0', ESP_AT_WEB_SCRATCH_BUFSIZE * sizeof(char));
     esp_wifi_get_mode(&current_wifi_mode);
-    if (current_wifi_mode != WIFI_MODE_APSTA && current_wifi_mode != WIFI_MODE_STA) {
-        printf("Error, wifi mode is not correct\r\n");
+    if (current_wifi_mode != WIFI_MODE_APSTA) {
+        ESP_LOGE(TAG, "invalid wifi mode");
         goto error_handle;
     }
     // only wifi config not start or have success apply one connection,allow to apply new connect
@@ -1320,6 +1329,7 @@ error_handle:
 static esp_err_t config_wifi_get_handler(httpd_req_t *req)
 {
     wifi_sta_connect_config_t *connect_config = at_web_get_sta_connect_config();
+    wifi_sta_connect_ipcon_t *connect_confip = &s_wifi_sta_connect_ipcon;
     wifi_sta_connection_info_t *connection_info = at_web_get_sta_connection_info();
     char temp_str[32] = {0};
     int32_t json_len = 0;
