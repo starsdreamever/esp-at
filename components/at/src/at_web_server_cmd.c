@@ -1667,8 +1667,8 @@ static esp_err_t ota_upgrade(httpd_req_t *req)
     ESP_LOGI(TAG, "ota end successfully, please restart");
 
     esp_restart();
-        for (;;) {
-        }
+//        for (;;) {}
+        
 
     return ESP_OK;
 
