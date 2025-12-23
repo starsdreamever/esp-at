@@ -1360,7 +1360,6 @@ static esp_err_t config_wifi_get_handler(httpd_req_t *req)
         json_len += sprintf(temp_json_str + json_len, "%c", c);
     }
     json_len += sprintf(temp_json_str + json_len, "\",");
-    printf("get ssid:%s/r/n" , connect_config.ssid);
 
     // add password to json str
     // note: escape special non-control characters in json format, see https://www.json.org/json-en.html for more details
