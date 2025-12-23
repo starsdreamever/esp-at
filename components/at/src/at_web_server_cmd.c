@@ -1665,6 +1665,11 @@ static esp_err_t ota_upgrade(httpd_req_t *req)
     at_web_response_ok(req);
     esp_at_port_active_write_data((uint8_t*)s_ota_receive_success_response, strlen(s_ota_receive_success_response));
     ESP_LOGI(TAG, "ota end successfully, please restart");
+
+    esp_restart();
+        for (;;) {
+        }
+
     return ESP_OK;
 
 err_handler:
