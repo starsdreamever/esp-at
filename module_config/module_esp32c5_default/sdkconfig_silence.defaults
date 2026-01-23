@@ -1,7 +1,7 @@
 # The Optimized Configuration
 # Do NOT edit unless you know exactly what you are doing
 
-CONFIG_IDF_TARGET_ESP32C5=n
+CONFIG_IDF_TARGET_ESP32C5=y
 
 # Serial flasher config
 CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
@@ -134,7 +134,7 @@ CONFIG_AT_BLUFI_COMMAND_SUPPORT=y
 
 # Application manager
 CONFIG_APP_PROJECT_VER_FROM_CONFIG=y
-CONFIG_APP_PROJECT_VER="v4.1.0.0-dev"
+CONFIG_APP_PROJECT_VER="v4.1.0.0-sl5G"
 
 # Wear Levelling
 CONFIG_WL_SECTOR_SIZE_512=y
