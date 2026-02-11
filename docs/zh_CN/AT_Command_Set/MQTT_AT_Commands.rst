@@ -11,8 +11,8 @@ MQTT AT 命令集
 -  :ref:`AT+MQTTLONGUSERNAME <cmd-MQTTLONGUSERNAME>`：设置 MQTT 登陆用户名
 -  :ref:`AT+MQTTLONGPASSWORD <cmd-MQTTLONGPASSWORD>`：设置 MQTT 登陆密码
 -  :ref:`AT+MQTTCONNCFG <cmd-MQTTCONNCFG>`：设置 MQTT 连接属性
--  :ref:`AT+MQTTALPN <cmd-MQTTALPN>`：设置 MQTT 应用层协议协商（ALPN）
--  :ref:`AT+MQTTSNI <cmd-MQTTSNI>`：设置 MQTT 服务器名称指示（SNI）
+-  :ref:`AT+MQTTALPN <cmd-MQTTALPN>`：设置 MQTT 应用层协议协商 (ALPN)
+-  :ref:`AT+MQTTSNI <cmd-MQTTSNI>`：设置 MQTT 服务器名称指示 (SNI)
 -  :ref:`AT+MQTTCONN <cmd-MQTTCONN>`：连接 MQTT Broker
 -  :ref:`AT+MQTTPUB <cmd-MQTTPUB>`：发布 MQTT 消息（字符串）
 -  :ref:`AT+MQTTPUBRAW <cmd-MQTTPUBRAW>`：发布长 MQTT 消息
@@ -28,6 +28,7 @@ MQTT AT 命令集
 ------
 
 .. important::
+  - 当前，{IDF_TARGET_NAME} 系列 AT 固件支持 `MQTT 3.1.1 版本 <https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html>`_。
   - 默认的 AT 固件支持此页面下的所有 AT 命令。如果您不需要 {IDF_TARGET_NAME} 支持 MQTT 命令，请自行 :doc:`编译 ESP-AT 工程 <../Compile_and_Develop/How_to_clone_project_and_compile_it>`，在第五步配置工程里选择：
 
     - 禁用 ``Component config`` > ``AT`` > ``AT MQTT command support``
@@ -87,8 +88,9 @@ MQTT AT 命令集
 ^^^^
 
 -  每条 AT 命令的总长度不能超过 256 字节。
--  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 MQTT 证书。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
+-  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 MQTT 证书（具体步骤请参考 :ref:`AT+SYSMFG 命令示例 <sysmfg-pki>`，证书配置方法与 SSL 证书相同）。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
 -  如果 ``<scheme>`` 配置为 3、5、8、10，为了校验服务器的证书有效期，请在发送 :ref:`AT+MQTTCONN <cmd-MQTTCONN>` 命令前确保 {IDF_TARGET_NAME} 已获取到当前时间。（您可以发送 :ref:`AT+CIPSNTPCFG <cmd-SNTPCFG>` 命令来配置 SNTP，获取当前时间，发送 :ref:`AT+CIPSNTPTIME? <cmd-SNTPT>` 命令查询当前时间。）
+-  关于 TLS 协议版本配置：请参考 :ref:`修改 TLS 协议版本说明 <modify-tls-version>`。
 
 .. _cmd-MQTTLONGCLIENTID:
 
@@ -274,7 +276,7 @@ MQTT AT 命令集
 
 .. _cmd-MQTTALPN:
 
-:ref:`AT+MQTTALPN <MQTT-AT>`：设置 MQTT 应用层协议协商（ALPN）
+:ref:`AT+MQTTALPN <MQTT-AT>`：设置 MQTT 应用层协议协商 (ALPN)
 -------------------------------------------------------------------------
 
 设置命令
@@ -282,7 +284,7 @@ MQTT AT 命令集
 
 **功能：**
 
-设置 MQTT 应用层协议协商（ALPN）
+设置 MQTT 应用层协议协商 (ALPN)
 
 **命令：**
 
@@ -328,7 +330,7 @@ MQTT AT 命令集
 
 .. _cmd-MQTTSNI:
 
-:ref:`AT+MQTTSNI <MQTT-AT>`：设置 MQTT 服务器名称指示（SNI）
+:ref:`AT+MQTTSNI <MQTT-AT>`：设置 MQTT 服务器名称指示 (SNI)
 -------------------------------------------------------------------------
 
 设置命令
@@ -336,7 +338,7 @@ MQTT AT 命令集
 
 **功能：**
 
-设置 MQTT 服务器名称指示（SNI）
+设置 MQTT 服务器名称指示 (SNI)
 
 **命令：**
 

@@ -227,6 +227,11 @@ HTTP AT 命令集
 -  如果包含 URL 的整条命令的长度超过了 256 字节，请先使用 :ref:`AT+HTTPURLCFG <cmd-HTTPURLCFG>` 命令预配置 URL，然后本命令里的 ``<"url">`` 参数需要设置为 ``""``。
 -  该命令的 ``content-type`` 默认类型为 ``application/x-www-form-urlencoded``。
 -  如果您想设置 HTTP 请求头，请使用 :ref:`AT+HTTPCHEAD <cmd-HTTPCHEAD>` 命令设置。
+-  性能优化：本命令使用短连接模式，每次请求都会建立新连接（HTTPS 需进行 SSL 握手）。为实现低时延通信，建议改用 :ref:`AT+CIPSTART <cmd-START>` 建立长连接，由 MCU 构造 HTTP 请求包并通过 :ref:`AT+CIPSEND <cmd-SEND>` 发送，以避免重复握手产生的通信开销。
+-  内存管理：本命令每次新建并关闭连接，会产生 TIME_WAIT 状态占用内存。若发现最小堆空间持续下降，可通过以下方式优化：
+
+  - 减小 TCP Maximum Segment Lifetime (MSL)：``./build.py menuconfig`` > ``Component config`` > ``LWIP`` > ``TCP`` > ``Maximum segment lifetime (MSL)``，然后重新编译 AT 固件。注意：减小 MSL 可以缩短 TIME_WAIT 状态的持续时间，从而更快释放内存，但不能完全消除 TIME_WAIT 状态。
+  - 改用 TCP 长连接复用，避免频繁创建和关闭连接。
 
 .. _cmd-HTTPCPUT:
 
@@ -369,7 +374,7 @@ HTTP AT 命令集
 
     >
 
-符号 ``>`` 表示 AT 准备好接收 AT 命令口数据，此时您可以输入 HTTP 请求头（请求头为 ``key: value`` 形式），当数据长度达到参数 ``<req_header_len>`` 的值时，AT 返回：
+符号 ``>`` 表示 AT 准备好接收 AT 命令口数据，此时您可以输入 HTTP 请求头（请求头为 ``key: value`` 形式，无需以 ``\r\n`` 结尾），当数据长度达到参数 ``<req_header_len>`` 的值时，AT 返回：
 
 ::
 
@@ -446,7 +451,7 @@ HTTP AT 命令集
 
 - 默认 AT 固件不支持 HTTP 证书配置，您可以启用 ``./build.py menuconfig`` > ``Component config`` > ``AT`` > ``AT http command support`` > ``AT HTTP authentication method`` 下选型来使其支持。
 - 本命令配置的参数是全局性的，一旦设置，所有 HTTP 命令都会共用该配置。
-- 如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 HTTP 证书。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
+- 如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 HTTP 证书（具体步骤请参考 :ref:`AT+SYSMFG 命令示例 <sysmfg-pki>`，证书配置方法与 SSL 证书相同）。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
 - 如果 ``<auth_mode>`` 配置为 2 或者 3，为了校验服务器的证书有效期，请在发送其它 HTTP 命令前确保 {IDF_TARGET_NAME} 已获取到当前时间。（您可以发送 :ref:`AT+CIPSNTPCFG <cmd-SNTPCFG>` 命令来配置 SNTP，获取当前时间，发送 :ref:`AT+CIPSNTPTIME? <cmd-SNTPT>` 命令查询当前时间。）
 
 .. _cmd-HTTPErrCode:

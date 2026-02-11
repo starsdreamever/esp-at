@@ -42,22 +42,28 @@ Obtain certificates and endpoints from AWS IoT
 Connect to AWS IoT based on mutual authentication with MQTT AT commands
 ---------------------------------------------------------------------------
 
-Replace certificates
+Configure certificates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are three ways to replace MQTT certificates:
+
+**Method 1: Recompile firmware**
 
 Open your local ESP-AT project and do the following:
 
-- Replace :component_file:`customized_partitions/raw_data/mqtt_ca/mqtt_ca.crt` with ``Amazon-root-CA-1.pem``.
-- Replace :component_file:`customized_partitions/raw_data/mqtt_cert/mqtt_client.crt` with ``device.pem.crt``.
-- Replace :component_file:`customized_partitions/raw_data/mqtt_key/mqtt_client.key` with ``private.pem.key``.
+- Replace :component_file:`mqtt_ca.crt <customized_partitions/raw_data/mqtt_ca/mqtt_ca.crt>` with ``Amazon-root-CA-1.pem``.
+- Replace :component_file:`mqtt_client.crt <customized_partitions/raw_data/mqtt_cert/mqtt_client.crt>` with ``device.pem.crt``.
+- Replace :component_file:`mqtt_client.key <customized_partitions/raw_data/mqtt_key/mqtt_client.key>` with ``private.pem.key``.
 
-Compile and flash the AT firmware
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Then compile the ESP-AT project to build the AT firmware, and flash the firmware to your {IDF_TARGET_NAME}. For more information, please refer to :doc:`../Compile_and_Develop/How_to_clone_project_and_compile_it`.
 
-Compile the ESP-AT project to build the AT firmware, and flash the firmware to your {IDF_TARGET_NAME}. For more information, please refer to :doc:`../Compile_and_Develop/How_to_clone_project_and_compile_it`.
+**Method 2: Update certificates at runtime**
 
-.. note::
-  If you do not want to compile the ESP-AT project to replace certificates, you can directly use the AT command to replace certificates in the firmware. For more information, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
+If you don't want to recompile the firmware, you can directly use the :ref:`AT+SYSMFG <cmd-SYSMFG>` command to update MQTT certificates at runtime. For detailed operation steps, please refer to :ref:`PKI Configuration in AT+SYSMFG command examples <sysmfg-pki>`. The certificate configuration method is the same as SSL certificates, just change the namespace to ``mqtt_cert``, ``mqtt_key``, and ``mqtt_ca``.
+
+**Method 3: Update only the certificate bin file**
+
+If you already have AT firmware and only need to pre-flash your own certificates, you can directly update the ``mfg_nvs.bin`` file. For detailed operation steps, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
 
 Use AT commands to connect to AWS IoT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -198,14 +204,14 @@ Log for normal interaction is as follows:
 
 #. Log on the ESP32 side
 
-   .. figure:: ../../img/esp32at-log.png
+   .. figure:: ../../_static/at_command_examples/esp32at-log.png
        :scale: 100 %
        :align: center
        :alt: Log of Connecting to AWS IoT on ESP32 Side
 
 #. Log on the AWS side
 
-   .. figure:: ../../img/aws-log.png
+   .. figure:: ../../_static/at_command_examples/aws-log.png
        :scale: 100 %
        :align: center
        :alt: Log of Connecting to AWS IoT on AWS Side

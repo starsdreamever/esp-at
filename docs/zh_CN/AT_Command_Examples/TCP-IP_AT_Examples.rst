@@ -213,7 +213,7 @@ TCP-IP AT 示例
 
 #. PC 连接到 {IDF_TARGET_NAME} 设备的 softAP。
 
-   .. figure:: ../../img/Connect-SoftAP.png
+   .. figure:: ../../_static/at_command_examples/Connect-SoftAP.png
        :scale: 100 %
        :align: center
        :alt: Connect SoftAP
@@ -822,7 +822,7 @@ TCP-IP AT 示例
 
 #. PC 连接到 {IDF_TARGET_NAME} 设备的 softAP。
 
-   .. figure:: ../../img/Connect-SoftAP.png
+   .. figure:: ../../_static/at_command_examples/Connect-SoftAP.png
        :scale: 100 %
        :align: center
        :alt: Connect SoftAP
@@ -898,7 +898,7 @@ TCP-IP AT 示例
 
 本示例中使用的证书是 ESP-AT 中默认的证书，您也可以使用自己的证书：
 
-  * 要使用您自己的 SSL 客户端证书，请根据 :doc:`../Compile_and_Develop/How_to_update_pki_config` 文档替换默认的证书。
+  * 要使用您自己的 SSL 客户端证书，可以在运行时使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新证书（请参考 :ref:`AT+SYSMFG 命令示例中的 PKI 配置 <sysmfg-pki>`），也可以通过重新编译固件替换默认证书（请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`）。
   * 要使用您自己的 SSL 服务器证书，请用您自己的证书路径替换下面的 SSL 服务器证书。
 
 #. 设置 Wi-Fi 模式为 station。
@@ -1175,7 +1175,7 @@ TCP-IP AT 示例
 
 #. PC 与 {IDF_TARGET_NAME} 设备连接同一个路由。
 
-   .. figure:: ../../img/Connect-SoftAP.png
+   .. figure:: ../../_static/at_command_examples/Connect-SoftAP.png
        :scale: 100 %
        :align: center
        :alt: Connect SoftAP
@@ -1260,7 +1260,7 @@ TCP-IP AT 示例
 
      OK
 
-{IDF_TARGET_NAME} 设备作为 TCP 客户端，建立单连接，实现 UART Wi-Fi 透传
+{IDF_TARGET_NAME} 设备作为 TCP 客户端，建立单连接，实现 Network 透传
 -----------------------------------------------------------------------------------------
 
 #. 设置 Wi-Fi 模式为 station。
@@ -1340,7 +1340,7 @@ TCP-IP AT 示例
 
      OK
 
-#. 进入 UART Wi-Fi :term:`透传接收模式`。
+#. 进入 Network :term:`透传接收模式`。
 
    命令：
 
@@ -1354,7 +1354,7 @@ TCP-IP AT 示例
 
      OK
 
-#. 进入 UART Wi-Fi :term:`透传模式` 并发送数据。
+#. 进入 Network :term:`透传模式` 并发送数据。
 
    命令：
 
@@ -1378,7 +1378,7 @@ TCP-IP AT 示例
 
      使用 ``+++`` 可退出 :term:`透传模式`，回到 :term:`透传接收模式`，此时 TCP 连接仍然有效。您也可以使用 ``AT+CIPSEND`` 命令恢复透传。
 
-#. 退出 UART Wi-Fi :term:`透传接收模式`。
+#. 退出 Network :term:`透传接收模式`。
 
    命令：
 
@@ -1408,7 +1408,7 @@ TCP-IP AT 示例
 
      OK
 
-{IDF_TARGET_NAME} 设备作为 TCP 服务器，实现 UART Wi-Fi 透传
+{IDF_TARGET_NAME} 设备作为 TCP 服务器，实现 Network 透传
 -----------------------------------------------------------------------------------------
 
 #. 设置 Wi-Fi 模式为 station。
@@ -1534,7 +1534,7 @@ TCP-IP AT 示例
 
     0,CONNECT
 
-#. 进入 UART Wi-Fi :term:`透传接收模式`。
+#. 进入 Network :term:`透传接收模式`。
 
    命令：
 
@@ -1548,7 +1548,7 @@ TCP-IP AT 示例
 
      OK
 
-#. 进入 UART Wi-Fi :term:`透传模式` 并发送数据。
+#. 进入 Network :term:`透传模式` 并发送数据。
 
    命令：
 
@@ -1572,7 +1572,7 @@ TCP-IP AT 示例
 
      使用 ``+++`` 可退出 :term:`透传模式`，回到 :term:`透传接收模式`，此时 TCP 连接仍然有效。您也可以使用 ``AT+CIPSEND`` 命令恢复透传。
 
-#. 退出 UART Wi-Fi :term:`透传接收模式`。
+#. 退出 Network :term:`透传接收模式`。
 
    命令：
 
@@ -1602,7 +1602,7 @@ TCP-IP AT 示例
 
      OK
 
-{IDF_TARGET_NAME} 设备作为 softAP 在 UDP 传输中实现 UART Wi-Fi 透传
+{IDF_TARGET_NAME} 设备作为 softAP 在 UDP 传输中实现 Network 透传
 ---------------------------------------------------------------------------------------------------------
 
 #. 设置 Wi-Fi 模式为 softAP。
@@ -1635,7 +1635,7 @@ TCP-IP AT 示例
 
 #. PC 连接到 {IDF_TARGET_NAME} 设备的 softAP。
 
-   .. figure:: ../../img/Connect-SoftAP.png
+   .. figure:: ../../_static/at_command_examples/Connect-SoftAP.png
        :scale: 100 %
        :align: center
        :alt: Connect SoftAP
@@ -1660,7 +1660,7 @@ TCP-IP AT 示例
 
      OK
 
-#. 进入 UART Wi-Fi :term:`透传接收模式`。
+#. 进入 Network :term:`透传接收模式`。
 
    命令：
 
@@ -1674,7 +1674,7 @@ TCP-IP AT 示例
 
      OK
 
-#. 进入 UART Wi-Fi :term:`透传模式` 并发送数据。
+#. 进入 Network :term:`透传模式` 并发送数据。
 
    命令：
 
@@ -1698,7 +1698,7 @@ TCP-IP AT 示例
 
      使用 ``+++`` 可退出 :term:`透传模式`，回到 :term:`透传接收模式`，此时 TCP 连接仍然有效。您也可以使用 ``AT+CIPSEND`` 命令恢复透传。
 
-#. 退出 UART Wi-Fi :term:`透传接收模式`。
+#. 退出 Network :term:`透传接收模式`。
 
    命令：
 

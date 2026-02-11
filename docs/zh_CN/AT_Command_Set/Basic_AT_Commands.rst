@@ -427,6 +427,9 @@
     // 设置开机进入 TCP 服务器透传模式，监听端口 1002
     AT+SAVETRANSLINK=3,1002,"TCP",2
 
+    // 重启模块
+    AT+RST
+
     // PC 连接到 esp-ap-001，并通过 TCP 客户端工具连接到 {IDF_TARGET_NAME} 的 1002 端口
     nc 192.168.4.1 1002
 
@@ -756,7 +759,7 @@
 ^^^^
 
 -  配置更改将保存在 NVS 分区，当设备再次上电时仍然有效。
--  使用硬件流控功能需要连接设备的 CTS/RTS 管脚，详情请见 :doc:`../Get_Started/Hardware_connection` 和 ``components/customized_partitions/raw_data/factory_param/factory_param_data.csv``。 
+-  使用硬件流控功能需要连接设备的 CTS/RTS 管脚，详情请见 :doc:`../Get_Started/Hardware_connection` 和 ``components/customized_partitions/raw_data/factory_param/factory_param_data.csv``。
 
 示例
 ^^^^
@@ -876,8 +879,16 @@
 参数
 ^^^^
 
--  **<remaining RAM size>**：当前剩余堆空间，单位：byte
--  **<minimum heap size>**：运行时的最小堆空间，单位：byte。当 ``<minimum heap size>`` 小于或接近于 10 KB 时，{IDF_TARGET_NAME} 的 Wi-Fi 和低功耗蓝牙的功能可能会受影响。
+- **<remaining RAM size>**：当前可用的堆空间大小，单位：byte。当有内存泄漏时，该值会逐渐减小。
+- **<minimum heap size>**：{IDF_TARGET_NAME} 上电以来记录到的最小可用堆空间大小，单位：byte。当 ``<minimum heap size>`` 小于或接近于 10 KB 时，可能影响 {IDF_TARGET_NAME} 的 Wi-Fi 和低功耗蓝牙功能。此数值仅会在出现新低值时更新，不会增加。
+
+说明
+^^^^
+
+- 当 ``<minimum heap size>`` 小于或接近 10 KB，或在 :term:`AT 日志端口` 看到类似 ``alloc failed, size:<requested_size>, caps:<requested_caps>`` 的日志时，请考虑进行内存优化：
+
+  - 在 ``python build.py menuconfig`` > ``Component config`` > ``AT`` 路径下禁用不需要的 AT 功能。
+  - 参考 `内存优化 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/{IDF_TARGET_PATH_NAME}/api-guides/performance/ram-usage.html>`_ 文档中的相关方法。
 
 示例
 ^^^^
@@ -971,7 +982,7 @@
 
 -  **<state>**：
 
-   - Bit0：退出 Wi-Fi :term:`透传模式`, Bluetooth LE SPP 及 Bluetooth SPP 时是否打印提示信息
+   - Bit0：退出 Network :term:`透传模式`, Bluetooth LE SPP 及 Bluetooth SPP 时是否打印提示信息
 
      - 0：不打印
      - 1：打印 ``+QUITT``
@@ -981,7 +992,7 @@
      - 0：使用简单版提示信息，如 ``XX,CONNECT``
      - 1：使用详细版提示信息，如 ``+LINK_CONN:status_type,link_id,ip_type,terminal_type,remote_ip,remote_port,local_port``
 
-   - Bit2：连接状态提示信息，适用于 Wi-Fi :term:`透传模式`、Bluetooth LE SPP 及 Bluetooth SPP
+   - Bit2：连接状态提示信息，适用于 Network :term:`透传模式`、Bluetooth LE SPP 及 Bluetooth SPP
 
      - 0：不打印提示信息
      - 1：当 Wi-Fi、socket、Bluetooth LE 或 Bluetooth 状态发生改变时，打印提示信息，如：
@@ -1010,7 +1021,7 @@
 ^^^^
 
 -  若 :ref:`AT+SYSSTORE=1 <cmd-SYSSTORE>`，配置更改将被保存在 NVS 分区。
--  若设 Bit0 为 1，退出 Wi-Fi :term:`透传模式` 时会提示 ``+QUITT``。
+-  若设 Bit0 为 1，退出 :term:`透传模式` 时会提示 ``+QUITT``。
 -  若设 Bit1 为 1，将会影响 :ref:`AT+CIPSTART <cmd-START>` 和 :ref:`AT+CIPSERVER <cmd-SERVER>` 命令，系统将提示 "+LINK_CONN:status_type,link_id,ip_type,terminal_type,remote_ip,remote_port,local_port"，而不是 "XX,CONNECT"。
 
 示例
@@ -1018,7 +1029,7 @@
 
 ::
 
-    // 退出 Wi-Fi 透传模式时不打印提示信息
+    // 退出透传模式时不打印提示信息
     // 连接时打印详细版提示信息
     // 连接状态发生改变时不打印信息
     AT+SYSMSG=2
@@ -1196,7 +1207,7 @@
 
 ::
 
-    AT+SYSMSGFILTERCFG=<operator>,<head_regexp_len>,<tail_regexp_len>
+    AT+SYSMSGFILTERCFG=<operator>,<head_regexp_len>,<tail_regexp_len>[,<cflags>]
 
 **响应：**
 
@@ -1229,14 +1240,19 @@
 
 - **<head_regexp_len>**：头部正则表达式长度。范围：[0,64]。如果设置为 0，代表忽略头部正则表达式的匹配，同时 ``<tail_regexp_len>`` 不能为 0。
 - **<tail_regexp_len>**：尾部正则表达式长度。范围：[0,64]。如果设置为 0，代表忽略尾部正则表达式的匹配，同时 ``<head_regexp_len>`` 不能为 0。
+- **<cflags>**：可选参数，正则表达式的编译标志，详见 `cflags 说明 <https://linux.die.net/man/3/regcomp>`__。默认值：0。
+
+  - bit 0: REG_EXTENDED，使用 POSIX 扩展正则表达式语法。
+  - bit 1: REG_ICASE，忽略大小写匹配。
+  - bit 2: REG_NEWLINE，改变 ``^`` 和 ``$`` 的行为，使其匹配行的开头和结尾，而不是整个字符串的开头和结尾。
 
 说明
 """"""
 
 - 请先使用本命令配置有效的过滤器，再通过 :ref:`AT+SYSMSGFILTER <cmd-SYSMSGFILTER>` 命令启用或禁用系统消息过滤，实现更加精细的系统消息管理。
-- 头部和尾部正则表达式格式参考 `POSIX 基本正则语法（BRE） <https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended>`_。
+- 头部和尾部正则表达式格式参考 `POSIX 基本正则语法 (BRE) <https://en.wikipedia.org/wiki/Regular_expression#POSIX_basic_and_extended>`_。
 - 为了避免 :term:`系统消息` (AT 命令口的 TX 数据) 被错误过滤，**强烈建议** 头部正则表达式以 ``^`` 开头，尾部正则表达式以 ``$`` 结束。
-- 只有系统消息 **同时匹配** 上头部正则表达式和尾部正则表达式时，系统消息才会被过滤。过滤后，系统消息被正则表达式匹配上的数据会被 AT 过滤掉，MCU 不会收到；而未被正则表达式匹配上的数据，会原样发往 MCU。
+- 只有系统消息 **同时匹配** 上头部正则表达式和尾部正则表达式时，系统消息才会被过滤。过滤后，系统消息被正则表达式匹配上的数据会被 AT 过滤掉，MCU 不会收到；而未被正则表达式匹配上的数据，会原样发往 MCU。例如：收到数据 data，长度为 n 字节，头部正则表达式匹配了 data[0] ~ data[i]，尾部正则表达式匹配了 data[j] ~ data[n-1]，那么最终 MCU 收到的数据为 data[i+1] ~ data[j-1]。
 - 当系统消息匹配到一个过滤器后，不会再继续匹配其它的过滤器。
 - 系统消息匹配过滤器时，系统消息不会缓存，即不会将上一条的系统消息和本条系统消息合在一起，进行匹配。
 - 对于吞吐量较大的设备，强烈建议您设置较少的过滤器，同时及时通过 :ref:`AT+SYSMSGFILTER=0 <cmd-SYSMSGFILTER>` 命令禁用系统消息过滤。
@@ -1272,7 +1288,7 @@
 
 ::
 
-    AT+SYSMSGFILTERCFG=<operator>,<head_regexp_len>,<tail_regexp_len>
+    AT+SYSMSGFILTERCFG=<operator>,<head_regexp_len>,<tail_regexp_len>[,<cflags>]
 
 **响应：**
 
@@ -1305,6 +1321,11 @@
 
 - **<head_regexp_len>**：头部正则表达式长度。范围：[0,64]。如果设置为 0，则 ``<tail_regexp_len>`` 不能为 0。
 - **<tail_regexp_len>**：尾部正则表达式长度。范围：[0,64]。如果设置为 0，则 ``<head_regexp_len>`` 不能为 0。
+- **<cflags>**：可选参数，正则表达式的编译标志，详见 `cflags 说明 <https://linux.die.net/man/3/regcomp>`__。默认值：0。
+
+  - bit 0: REG_EXTENDED，使用 POSIX 扩展正则表达式语法。
+  - bit 1: REG_ICASE，忽略大小写匹配。
+  - bit 2: REG_NEWLINE，改变 ``^`` 和 ``$`` 的行为，使其匹配行的开头和结尾，而不是整个字符串的开头和结尾。
 
 说明
 """"""
@@ -1615,6 +1636,8 @@
 - 请先阅读 `非易失性存储 (NVS) <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/api-reference/storage/nvs_flash.html>`_，了解命名空间、键值对的概念。
 - 写入前，您无需主动擦除命名空间或键值对（NVS 会根据需要自动擦除键值对）。
 - 如果您想修改 mfg_nvs 分区中的某些数据，请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令（NVS 中的键值对操作）。如果您想修改整个 mfg_nvs 分区，请使用 :ref:`AT+SYSFLASH <cmd-SYSFLASH>` 命令（分区操作）。
+- 更多 AT+SYSMFG 命令的使用示例，请参考 :doc:`../AT_Command_Examples/sysmfg_at_examples`。
+- 修改配置时，本命令不会对配置值进行功能性检查。即使您配置了错误的数值，也会被存储。因此，您需要自行确保配置数据的正确性。
 
 示例
 """""
@@ -1850,6 +1873,10 @@
 执行命令
 ^^^^^^^^
 
+**功能：**
+
+回滚到以前的固件。
+
 **命令：**
 
 ::
@@ -1873,11 +1900,12 @@
 说明
 ^^^^
 
-.. only:: esp32c2
+.. list::
 
-  - **{IDF_TARGET_CFG_PREFIX}-4MB AT 固件支持此命令，而 {IDF_TARGET_CFG_PREFIX}-2MB AT 固件由于采用了压缩 OTA 分区，因此不支持此命令**。
-
--  本命令不通过 OTA 升级，只会回滚到另一 OTA 分区的固件。
+  - 在执行固件回滚时，{IDF_TARGET_NAME} 会先验证目标固件的有效性，只有验证通过时才会执行回滚操作，否则将返回错误信息。
+  :esp32c2: - 由于 {IDF_TARGET_NAME}-2MB AT 固件采用压缩 OTA 分区，压缩固件解压后与当前运行固件为同一镜像，因此无法实现真正的固件切换。
+  :esp32c5 or esp32c61: - 由于 {IDF_TARGET_NAME}-4MB AT 固件采用压缩 OTA 分区，压缩固件解压后与当前运行固件为同一镜像，因此无法实现真正的固件切换。
+  :esp32c2 or esp32c3 or esp32c6 or esp32 or esp32s2: - 回滚功能独立于 OTA 升级流程，可直接跳转至另一 OTA 分区中的固件版本运行。
 
 .. _cmd-SETTIME:
 

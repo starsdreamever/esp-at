@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@
 #include "esp_bt.h"
 #endif
 #include "at_ota.h"
+#ifdef CONFIG_AT_FS_COMMAND_SUPPORT
+#include "esp_vfs_fat.h"
+#endif
 
 // unknown module name if not defined
 #define ESP_AT_UNKNOWN_STR      "Unknown"

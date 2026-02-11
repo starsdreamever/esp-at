@@ -179,7 +179,7 @@ AT 输出上述信息之后，升级过程开始。如果升级完成，返回�
 -  不建议升级到旧版本。降到旧版本会存在一定的兼容性问题，甚至无法运行，如果您坚持要升级到旧版本，请根据自己的产品自行测试验证功能。
 -  建议升级 AT 固件后，调用 :ref:`AT+RESTORE <cmd-RESTORE>` 恢复出厂设置。
 -  ``AT+USEROTA`` 支持 ``HTTP`` 和 ``HTTPS``。
--  AT 输出 ``>`` 字符后，数据中的特殊字符不需要转义字符进行转义，也不需要以新行结尾（CR-LF）。
+-  AT 输出 ``>`` 字符后，数据中的特殊字符不需要转义字符进行转义，也不需要以新行结尾 (CR-LF)。
 -  当 URL 为 ``HTTPS`` 时，不建议 SSL 认证。如果要求 SSL 认证，您必须自行生成 PKI 文件然后将它们下载到对应的分区中，之后在 ``AT+USEROTA`` 命令的实现代码中加载证书。对于 PKI 文件请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。对于 ``AT+USEROTA`` 命令，可参考 ESP-AT 工程提供的示例 `USEROTA <https://github.com/espressif/esp-at/blob/master/components/at/src/at_user_cmd.c>`_。
 -  请参考 :doc:`../Compile_and_Develop/How_to_implement_OTA_update` 获取更多 OTA 命令。
 
@@ -260,7 +260,7 @@ AT 输出上述信息之后，升级过程开始。如果升级完成，返回�
 
   - Bit 0：是否开启与 :ref:`AT+USERMCUSLEEP <cmd-USERMCUSLEEP>` 命令的关联。默认开启。即：收到 AT+USERMCUSLEEP=0 命令，指示 MCU 醒来；收到 AT+USERMCUSLEEP=1 命令，指示 MCU 睡眠。
   - Bit 1：是否开启与 :ref:`AT+SLEEP=0/1/2/3 <cmd-SLEEP>` 命令的关联。默认禁用。即：收到 AT+SLEEP=0 命令，指示 MCU 醒来；收到 AT+SLEEP=1/2/3 命令，指示 MCU 睡眠。
-  - Bit 2：是否开启 ``<delay time>`` 超时后指示 MCU 醒来功能。默认禁用。即：禁用时，delay time 后，指示 MCU 睡眠；使能时，delay time 后，指示 MCU 醒来。
+  - Bit 2：是否开启 ``<delay time>`` 超时后指示 MCU 醒来功能。默认禁用。即：禁用时，delay time 后，指示 MCU 睡眠；使能时，delay time 后，指示 MCU 醒来。Bit 2 需要搭配 bit 0 或 bit 1 一起使用（单独使用时，因为默认 MCU 是唤醒状态，所以每次都不会去唤醒 MCU）。
   - Bit 3（暂未实现）：是否开启 GPIO 指示 MCU 醒来功能。默认不支持。
 
 说明
@@ -268,7 +268,7 @@ AT 输出上述信息之后，升级过程开始。如果升级完成，返回�
 
 - 此命令只需要配置一次。
 - 每次 AT 向 MCU 主动发送数据前，会先发送唤醒信号再进入等待，``<delay time>`` 时间到了之后直接发送数据。此超时会降低与 MCU 间的传输效率。
-- 如果在 ``<delay time>`` 毫秒之前，AT 收到 ``<check mcu awake method>`` 里的任意唤醒事件，则立即清除唤醒状态；否则会等待 ``<delay time>`` 超时后，会自动清除唤醒状态。
+- 如果在 ``<delay time>`` 毫秒时间到达之前，AT 收到由 ``<check mcu awake method>`` 里的 bit 0 或 bit 1 定义的唤醒事件，则会立即清除唤醒状态；否则，AT 将持续等待至 ``<delay time>`` 超时，并在超时后自动清除唤醒状态。
 
 示例
 ^^^^

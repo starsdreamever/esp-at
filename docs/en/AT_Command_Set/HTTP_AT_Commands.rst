@@ -227,6 +227,11 @@ Note
 - If the length of the entire command containing the URL exceeds 256 bytes, please use the :ref:`AT+HTTPURLCFG <cmd-HTTPURLCFG>` command to preset the URL first, and then set the ``<"url">`` parameter of this command to ``""``.
 - the default type of ``content-type`` is ``application/x-www-form-urlencoded`` for this command.
 - To set HTTP request headers, use the :ref:`AT+HTTPCHEAD <cmd-HTTPCHEAD>` command to set them.
+- Performance optimization: This command uses short connections. It establishes a new connection for each request (HTTPS requires an SSL handshake). For low latency, it is recommended to use :ref:`AT+CIPSTART <cmd-START>` to establish a persistent connection. Construct HTTP request packets with the MCU and send them via :ref:`AT+CIPSEND <cmd-SEND>`. This avoids repeated handshake overhead.
+- Memory management: This command creates and closes a connection each time, which generates TIME_WAIT state and occupies memory. If the minimum heap space keeps decreasing, you can optimize it in the following ways:
+
+  - Reduce TCP Maximum Segment Lifetime (MSL): ``./build.py menuconfig`` > ``Component config`` > ``LWIP`` > ``TCP`` > ``Maximum segment lifetime (MSL)``, then recompile the AT firmware. Note: Reducing MSL can shorten the duration of TIME_WAIT state, thereby releasing memory faster, but it cannot completely eliminate the TIME_WAIT state.
+  - Use persistent TCP connections to avoid frequently creating and closing connections.
 
 .. _cmd-HTTPCPUT:
 
@@ -369,7 +374,7 @@ Set Command
 
     >
 
-The ``>`` symbol indicates that AT is ready to receive AT command data. At this point, you can enter the HTTP request header (in the format of ``key: value``). When the data length reaches the value of parameter ``<req_header_len>``, AT returns:
+The ``>`` symbol indicates that AT is ready to receive AT command data. At this point, you can enter the HTTP request header (in the format of ``key: value``, no need to end with ``\r\n``). When the data length reaches the value of parameter ``<req_header_len>``, AT returns:
 
 ::
 
@@ -446,7 +451,7 @@ Notes
 
 - By default, AT firmware does not support HTTP certificate configuration. You can enable it via ``./build.py menuconfig`` > ``Component config`` > ``AT`` > ``AT http command support`` > ``AT HTTP authentication method``.
 - The parameters configured by this command are global. Once set, all HTTP commands will share this configuration.
-- If you want to use your own certificate at runtime, use the :ref:`AT+SYSMFG <cmd-SYSMFG>` command to update the WebSocket certificate. If you want to pre-burn your own certificate, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
+- If you want to use your own certificate at runtime, use the :ref:`AT+SYSMFG <cmd-SYSMFG>` command to update the HTTP certificate (for detailed steps, please refer to :ref:`AT+SYSMFG command examples <sysmfg-pki>`, the certificate configuration method is the same as SSL certificates). If you want to pre-burn your own certificate, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
 - If ``<auth_mode>`` is set to 2 or 3, to verify the validity period of the server certificate, please ensure that {IDF_TARGET_NAME} has obtained the current time before sending other HTTP commands. (You can configure SNTP and obtain the current time by sending the :ref:`AT+CIPSNTPCFG <cmd-SNTPCFG>` command, and query the current time by sending the :ref:`AT+CIPSNTPTIME? <cmd-SNTPT>` command.)
 
 .. _cmd-HTTPErrCode:

@@ -12,8 +12,8 @@ TCP/IP AT 命令
 -  :ref:`AT+CIPSTART <cmd-START>`：建立 TCP 连接、UDP 传输或 SSL 连接
 -  :ref:`AT+CIPSTARTEX <cmd-STARTEX>`：建立自动分配 ID 的 TCP 连接、UDP 传输或 SSL 连接
 -  :ref:`[仅适用数据模式] +++ <cmd-PLUS>`: 退出 :term:`数据模式`
--  :ref:`AT+SAVETRANSLINK <cmd-SAVET>`：设置 Wi-Fi 开机 :term:`透传模式` 信息
--  :ref:`AT+CIPSEND <cmd-SEND>`：在 :term:`普通传输模式` 或 Wi-Fi :term:`透传模式` 下发送数据
+-  :ref:`AT+SAVETRANSLINK <cmd-SAVET>`：设置 Network 开机 :term:`透传模式` 信息
+-  :ref:`AT+CIPSEND <cmd-SEND>`：在 :term:`普通传输模式` 或 Network :term:`透传模式` 下发送数据
 -  :ref:`AT+CIPSENDL <cmd-SENDL>`：在 :term:`普通传输模式` 下并行发送长数据
 -  :ref:`AT+CIPSENDLCFG <cmd-SENDLCFG>`：设置 :ref:`AT+CIPSENDL <cmd-SENDL>` 命令的属性
 -  :ref:`AT+CIPSENDEX <cmd-SENDEX>`：在 :term:`普通传输模式` 下采用扩展的方式发送数据
@@ -29,7 +29,7 @@ TCP/IP AT 命令
 -  :ref:`AT+CIPSNTPTIME <cmd-SNTPT>`：查询 SNTP 时间
 -  :ref:`AT+CIPSNTPINTV <cmd-SNTPINTV>`：查询/设置 SNTP 时间同步的间隔
 -  :ref:`AT+CIPFWVER <cmd-FWVER>`：查询服务器已有的 AT 固件版本
--  :ref:`AT+CIUPDATE <cmd-UPDATE>`：通过 Wi-Fi 升级固件
+-  :ref:`AT+CIUPDATE <cmd-UPDATE>`：通过 Network 升级固件
 -  :ref:`AT+CIPDINFO <cmd-IPDINFO>`：设置 +IPD 消息详情
 -  :ref:`AT+CIPSSLCCONF <cmd-SSLCCONF>`：查询/设置 SSL 客户端配置
 -  :ref:`AT+CIPSSLCCIPHER <cmd-SSLCCIPHER>`：查询/设置 SSL 客户端的密码套件 (cipher suite)
@@ -38,7 +38,7 @@ TCP/IP AT 命令
 -  :ref:`AT+CIPSSLCALPN <cmd-SSLCALPN>`：查询/设置 SSL 客户端 ALPN
 -  :ref:`AT+CIPSSLCPSK <cmd-SSLCPSK>`：查询/设置 SSL 客户端的 PSK (字符串格式)
 -  :ref:`AT+CIPSSLCPSKHEX <cmd-SSLCPSKHEX>`：查询/设置 SSL 客户端的 PSK (十六进制格式)
--  :ref:`AT+CIPRECONNINTV <cmd-AUTOCONNINT>`：查询/设置 Wi-Fi :term:`透传模式` 下的 TCP/UDP/SSL 重连间隔
+-  :ref:`AT+CIPRECONNINTV <cmd-AUTOCONNINT>`：查询/设置 Network :term:`透传模式` 下的 TCP/UDP/SSL 重连间隔
 -  :ref:`AT+CIPRECVTYPE <cmd-CIPRECVTYPE>`：查询/设置套接字接收模式
 -  :ref:`AT+CIPRECVDATA <cmd-CIPRECVDATA>`：获取被动接收模式下的套接字数据
 -  :ref:`AT+CIPRECVLEN <cmd-CIPRECVLEN>`：查询被动接收模式下套接字数据的长度
@@ -174,7 +174,7 @@ TCP/IP AT 命令
 
 ::
 
-    AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>]
+    AT+CIPDOMAIN=<"domain name">[,<ip network>][,<timeout>][,<show_all_ip>]
 
 **响应：**
 
@@ -196,9 +196,14 @@ TCP/IP AT 命令
 
 -  **<"IP address">**：解析后的 IPv4 地址或 IPv6 地址
 -  **<timeout>**：命令超时。单位：毫秒。默认值：0。范围：[0,60000]。设置为 0 时，命令的超时依赖于网络和 lwIP 协议栈；设置为非 0 时，命令会在指定超时内返回，但会多消耗约 5 KB 的堆空间。
+-  **<show_all_ip>**：是否显示所有解析到的 IP 地址。默认值：0
+
+   - 0：只显示首个解析到的 IP 地址
+   - 1：显示所有解析到的 IP 地址
 
 说明
 ^^^^
+
 - 如果您想解析域名为多个 IP 地址，请增加 ``python build.py menuconfig`` > ``Component config`` > ``LWIP`` > ``DNS`` > ``Maximum number of IP addresses per host`` 的值，然后重新编译 ESP-AT 工程。最终返回的格式如下：
 
   ::
@@ -366,7 +371,7 @@ TCP/IP AT 命令
 -  **<"remote host">**：字符串参数，表示远端 IPv4 地址、IPv6 地址，或域名。最长为 64 字节。如果您需要使用域名且域名长度超过 64 字节，请使用 :ref:`AT+CIPDOMAIN <cmd-DOMAIN>` 命令获取域名对应的 IP 地址，然后使用 IP 地址建立连接。
 -  **<remote port>**：远端端口值
 -  **<local port>**：{IDF_TARGET_NAME} 设备的 UDP 端口值
--  **<mode>**：在 UDP Wi-Fi 透传下，本参数的值必须设为 0
+-  **<mode>**：在 UDP 透传下，本参数的值必须设为 0
 
    -  0: 接收到 UDP 数据后，不改变对端 UDP 地址信息（默认）
    -  1: 仅第一次接收到与初始设置不同的对端 UDP 数据时，改变对端 UDP 地址信息为发送数据设备的 IP 地址和端口
@@ -378,7 +383,7 @@ TCP/IP AT 命令
 说明
 """""
 - 如果 UDP 连接中的远端 IP 地址是 IPv4 组播地址 (224.0.0.0 ~ 239.255.255.255)，{IDF_TARGET_NAME} 设备将发送和接收 UDPv4 组播
-- 如果 UDP 连接中的远端 IP 地址是 IPv4 广播地址 (255.255.255.255)，{IDF_TARGET_NAME} 设备将发送和接收 UDPv4 广播
+- 如果 UDP 连接中的远端 IP 地址是 IPv4 广播地址 (255.255.255.255)，{IDF_TARGET_NAME} 设备将发送和接收 UDPv4 广播。需要注意的是，AT 不支持自动重复广播，如需定期广播，MCU 需要定时发送数据包。
 - 如果 UDP 连接中的远端 IP 地址是 IPv6 组播地址 (FF00:0:0:0:0:0:0:0 ~ FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF)，{IDF_TARGET_NAME} 设备将基于 IPv6 网络，发送和接收 UDP 组播
 - 使用参数 ``<mode>`` 前，需先设置参数 ``<local port>``
 
@@ -473,6 +478,16 @@ TCP/IP AT 命令
 - 如果 ``AT+CIPSTART`` 命令是基于 SSL 连接，且每个数据包的超时时间为 10 秒，则总超时时间会变得更长，具体取决于握手数据包的个数
 - 有一些 SSL 服务器需要 SSL 客户端在连接时要求拓展字段支持 SNI，请在 SSL 连接前先使用 :ref:`AT+CIPSSLCSNI <cmd-SSLCSNI>` 命令配置 SNI。通常情况下，SNI 的值为服务器的域名。
 
+.. _modify-tls-version:
+
+- 如果需要调整 TLS 协议版本，请重新编译 ESP-AT 工程。通过 ``python build.py menuconfig`` > ``Component config`` > ``mbedTLS`` 路径，禁用不需要的 TLS 版本或启用默认未支持的版本。
+
+    例如，启用 TLS 1.3 协议：
+
+        - ``python build.py menuconfig`` > ``Component config`` > ``mbedTLS`` > ``Using dynamic TX/RX buffer`` > 取消勾选
+        - ``python build.py menuconfig`` > ``Component config`` > ``mbedTLS`` > ``mbedTLS v3.x related`` > ``Keep peer certificate after handshake completion`` > 勾选
+        - ``python build.py menuconfig`` > ``Component config`` > ``mbedTLS`` > ``mbedTLS v3.x related`` > ``Support TLS 1.3 protocol`` > 勾选
+
 - 如果您想基于 IPv6 网络建立一个 SSL 连接，请执行以下操作：
 
   - 确保 AP 支持 IPv6
@@ -532,7 +547,7 @@ TCP/IP AT 命令
 
 .. _cmd-SEND:
 
-:ref:`AT+CIPSEND <TCPIP-AT>`：在 :term:`普通传输模式` 或 Wi-Fi :term:`透传模式` 下发送数据
+:ref:`AT+CIPSEND <TCPIP-AT>`：在 :term:`普通传输模式` 或 Network :term:`透传模式` 下发送数据
 ------------------------------------------------------------------------------------------------------------------
 
 设置命令
@@ -582,7 +597,7 @@ TCP/IP AT 命令
 
 **功能：**
 
-进入 Wi-Fi :term:`透传模式`
+进入 Network :term:`透传模式`
 
 **命令：**
 
@@ -603,9 +618,9 @@ TCP/IP AT 命令
 
     ERROR
 
-进入 Wi-Fi :term:`透传模式`，{IDF_TARGET_NAME} 设备每次最大接收 8192 字节，最大发送 2920 字节。如果收到的数据长度大于等于 2920 字节，数据会立即被分为每 2920 字节一组的块进行发送，否则会等待 20 毫秒或等待收到的数据大于等于 2920 字节再发送数据（您可以通过 :ref:`AT+TRANSINTVL <cmd-TRANSINTVL>` 命令配置此间隔）。当输入单独一包 :ref:`+++ <cmd-PLUS>` 时，退出 :term:`透传模式` 下的数据发送模式，请至少间隔 1 秒再发下一条 AT 命令。
+进入 Network :term:`透传模式`，{IDF_TARGET_NAME} 设备每次最大接收 8192 字节，最大发送 2920 字节。如果收到的数据长度大于等于 2920 字节，数据会立即被分为每 2920 字节一组的块进行发送，否则会等待 20 毫秒或等待收到的数据大于等于 2920 字节再发送数据（您可以通过 :ref:`AT+TRANSINTVL <cmd-TRANSINTVL>` 命令配置此间隔）。当输入单独一包 :ref:`+++ <cmd-PLUS>` 时，退出 :term:`透传模式` 下的数据发送模式，请至少间隔 1 秒再发下一条 AT 命令。
 
-本命令必须在开启 :term:`透传模式` 以及单连接下使用。若为 Wi-Fi UDP 透传，:ref:`AT+CIPSTART <cmd-START>` 命令的参数 ``<mode>`` 必须设置为 0。
+本命令必须在开启 :term:`透传模式` 以及单连接下使用。若为 UDP 透传，:ref:`AT+CIPSTART <cmd-START>` 命令的参数 ``<mode>`` 必须设置为 0。
 
 参数
 ^^^^
@@ -961,14 +976,14 @@ TCP/IP AT 命令
 参数
 ^^^^
 
-- **<"APIP">**: {IDF_TARGET_NAME} SoftAP 的 IPv4 地址
-- **<"APIP6LL">**: {IDF_TARGET_NAME} SoftAP 的 IPv6 本地链路地址
-- **<"APIP6GL">**: {IDF_TARGET_NAME} SoftAP 的 IPv6 全局地址
-- **<"APMAC">**: {IDF_TARGET_NAME} SoftAP 的 MAC 地址
-- **<"STAIP">**: {IDF_TARGET_NAME} station 的 IPv4 地址
-- **<"STAIP6LL">**: {IDF_TARGET_NAME} station 的 IPv6 本地链路地址
-- **<"STAIP6GL">**: {IDF_TARGET_NAME} station 的 IPv6 全局地址
-- **<"STAMAC">**: {IDF_TARGET_NAME} station 的 MAC 地址
+- **<"APIP">**: {IDF_TARGET_NAME} Wi-Fi SoftAP 的 IPv4 地址
+- **<"APIP6LL">**: {IDF_TARGET_NAME} Wi-Fi SoftAP 的 IPv6 本地链路地址
+- **<"APIP6GL">**: {IDF_TARGET_NAME} Wi-Fi SoftAP 的 IPv6 全局地址
+- **<"APMAC">**: {IDF_TARGET_NAME} Wi-Fi SoftAP 的 MAC 地址
+- **<"STAIP">**: {IDF_TARGET_NAME} Wi-Fi station 的 IPv4 地址
+- **<"STAIP6LL">**: {IDF_TARGET_NAME} Wi-Fi station 的 IPv6 本地链路地址
+- **<"STAIP6GL">**: {IDF_TARGET_NAME} Wi-Fi station 的 IPv6 全局地址
+- **<"STAMAC">**: {IDF_TARGET_NAME} Wi-Fi station 的 MAC 地址
 - **<"ETHIP">**: {IDF_TARGET_NAME} ethernet 的 IPv4 地址
 - **<"ETHIP6LL">**: {IDF_TARGET_NAME} ethernet 的 IPv6 本地链路地址
 - **<"ETHIP6GL">**: {IDF_TARGET_NAME} ethernet 的 IPv6 全局地址
@@ -1127,6 +1142,7 @@ TCP/IP AT 命令
 - 如果您想基于 IPv6 网络创建一个 TCP/SSL 服务器，请首先设置 :ref:`AT+CIPV6=1 <cmd-IPV6>`，并获取一个IPv6地址。
 - 关闭服务器时，参数 ``<"type">``、 ``<CA enable>`` 和 ``<netiif>`` 必须省略。
 - 若需查看建立服务器失败原因，请先运行 :ref:`AT+SYSLOG=1 <cmd-SYSLOG>` 启用日志后重试本命令。失败时，AT 会返回更详细的错误码 ``+ERRNO:<error_code>``，以便定位问题。
+- 关于 TLS 协议版本配置：请参考 :ref:`修改 TLS 协议版本说明 <modify-tls-version>`。
 
 示例
 ^^^^
@@ -1261,13 +1277,13 @@ TCP/IP AT 命令
 -  **<mode>**:
 
    -  0: :term:`普通传输模式`
-   -  1: Wi-Fi :term:`透传接收模式`，仅支持 TCP 单连接、UDP 固定通信对端、SSL 单连接的情况
+   -  1: Network :term:`透传接收模式`，仅支持 TCP 单连接、UDP 固定通信对端、SSL 单连接的情况
 
 说明
 ^^^^
 
 -  配置更改不保存到 flash。
--  在 {IDF_TARGET_NAME} 进入 Wi-Fi :term:`透传接收模式` 后，任何蓝牙功能将无法使用。
+-  在 {IDF_TARGET_NAME} 进入 Network :term:`透传接收模式` 后，任何蓝牙功能将无法使用。
 
 示例
 ^^^^
@@ -1573,10 +1589,10 @@ TCP/IP AT 命令
 
 .. _cmd-UPDATE:
 
-:ref:`AT+CIUPDATE <TCPIP-AT>`：通过 Wi-Fi 升级固件
+:ref:`AT+CIUPDATE <TCPIP-AT>`：通过 Network 升级固件
 ---------------------------------------------------------------------
 
-ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某些分区，从而升级固件。
+ESP-AT 在运行时，通过 Network 从指定的服务器上下载新固件到某些分区，从而升级固件。
 
 查询命令
 ^^^^^^^^
@@ -1841,8 +1857,8 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 ^^^^
 
 -  如果想要本配置立即生效，请在建立 SSL 连接前运行本命令。
--  配置更改将保存在 NVS 区，如果您使用 :ref:`AT+SAVETRANSLINK <cmd-SAVET>` 命令设置开机进入 Wi-Fi SSL :term:`透传模式`，{IDF_TARGET_NAME} 将在下次上电时基于本配置建立 SSL 连接。
--  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 SSL 证书。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
+-  配置更改将保存在 NVS 区，如果您使用 :ref:`AT+SAVETRANSLINK <cmd-SAVET>` 命令设置开机进入 SSL :term:`透传模式`，{IDF_TARGET_NAME} 将在下次上电时基于本配置建立 SSL 连接。
+-  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 SSL 证书（具体步骤请参考 :ref:`AT+SYSMFG 命令示例 <sysmfg-ssl-client>`）。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
 -  如果 ``<auth_mode>`` 配置为 2 或者 3，为了校验服务器的证书有效期，请在发送 :ref:`AT+CIPSTART <cmd-START>` 命令前确保 {IDF_TARGET_NAME} 已获取到当前时间。（您可以发送 :ref:`AT+CIPSNTPCFG <cmd-SNTPCFG>` 命令来配置 SNTP，获取当前时间，发送 :ref:`AT+CIPSNTPTIME? <cmd-SNTPT>` 命令查询当前时间。）
 
 .. _cmd-SSLCCIPHER:
@@ -2151,7 +2167,7 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 
 说明
 ^^^^
-- 类似于 :ref:`AT+CIPSSLCPSK <cmd-SSLCPSK>` 命令，该命令也用于设置或查询 SSL 客户端的预共享密钥（PSK），但其 ``<"psk">`` 参数使用十六进制格式而不是字符串格式。因此， ``<"psk">`` 参数中的 ``\0`` 表示为 ``00``。
+- 类似于 :ref:`AT+CIPSSLCPSK <cmd-SSLCPSK>` 命令，该命令也用于设置或查询 SSL 客户端的预共享密钥 (PSK)，但其 ``<"psk">`` 参数使用十六进制格式而不是字符串格式。因此， ``<"psk">`` 参数中的 ``\0`` 表示为 ``00``。
 
 示例
 ^^^^
@@ -2166,7 +2182,7 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 
 .. _cmd-AUTOCONNINT:
 
-:ref:`AT+CIPRECONNINTV <TCPIP-AT>`：查询/设置 Wi-Fi :term:`透传模式` 下的 TCP/UDP/SSL 重连间隔
+:ref:`AT+CIPRECONNINTV <TCPIP-AT>`：查询/设置 Network :term:`透传模式` 下的 TCP/UDP/SSL 重连间隔
 -----------------------------------------------------------------------------------------------------------
 
 查询命令
@@ -2174,7 +2190,7 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 
 **功能：**
 
-查询 Wi-Fi :term:`透传模式` 下的自动重连间隔
+查询 Network :term:`透传模式` 下的自动重连间隔
 
 **命令：**
 
@@ -2194,7 +2210,7 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 
 **功能：**
 
-设置 Wi-Fi :term:`透传模式` 下 TCP/UDP/SSL 传输断开后自动重连的间隔
+设置 Network :term:`透传模式` 下 TCP/UDP/SSL 传输断开后自动重连的间隔
 
 **命令：**
 
@@ -2282,7 +2298,7 @@ ESP-AT 在运行时，通过 Wi-Fi 从指定的服务器上下载新固件到某
 说明
 ^^^^
 
--  该配置不能用于 Wi-Fi :term:`透传模式`。
+-  该配置不能用于 Network :term:`透传模式`。
 
 -  当 ESP-AT 在被动模式下收到套接字数据时，会根据情况的不同提示不同的信息：
 
@@ -2542,6 +2558,7 @@ ping 对端主机
 -  若 :ref:`AT+SYSSTORE=1 <cmd-SYSSTORE>`，配置更改将保存在 NVS 区。
 -  这三个参数不能设置在同一个服务器上。
 -  当 ``<enable>`` 为 0 时，DNS 服务器可能会根据 {IDF_TARGET_NAME} 设备所连接的路由器的配置而改变。
+-  当 ``<enable>`` 为 1 时，手动设置的 DNS 服务器将始终生效，DHCP 从路由器获取的 DNS 配置不会覆盖手动设置的值。若要恢复使用 DHCP 分配的 DNS，需执行 ``AT+CIPDNS=0`` 重新启用自动获取。
 
 示例
 ^^^^

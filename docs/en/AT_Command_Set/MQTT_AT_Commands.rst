@@ -28,6 +28,7 @@ Introduction
 ------------
 
 .. important::
+  - Currently, AT firmware for {IDF_TARGET_NAME} series supports `MQTT Version 3.1.1 <https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html>`_.
   - The default AT firmware supports all the AT commands mentioned on this page. If you don't need {IDF_TARGET_NAME} to support MQTT commands, you can compile the ESP-AT project by following the steps in :doc:`Compile ESP-AT Project Locally <../Compile_and_Develop/How_to_clone_project_and_compile_it>` documentation. In the project configuration during the fifth step, make the following selections:
 
     - Disable ``Component config`` > ``AT`` > ``AT MQTT command support``
@@ -87,8 +88,9 @@ Note
 ^^^^^
 
 -  The length of the entire AT command should be less than 256 bytes.
--  If you want to use your own certificate at runtime, use the :ref:`AT+SYSMFG <cmd-SYSMFG>` command to update the MQTT certificate. If you want to pre-burn your own certificate, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
+-  If you want to use your own certificate at runtime, use the :ref:`AT+SYSMFG <cmd-SYSMFG>` command to update the MQTT certificate (for detailed steps, please refer to :ref:`AT+SYSMFG command examples <sysmfg-pki>`, the certificate configuration method is the same as SSL certificates). If you want to pre-burn your own certificate, please refer to :doc:`../Compile_and_Develop/How_to_update_pki_config`.
 -  If ``<scheme>`` is configured to 3, 5, 8, or 10, in order to check the server certificate validity period, please make sure {IDF_TARGET_NAME} has obtained the current time before sending the :ref:`AT+MQTTCONN <cmd-MQTTCONN>` command. (You can send :ref:`AT+CIPSNTPCFG <cmd-SNTPCFG>` command to configure SNTP and obtain the current time, and send :ref:`AT+CIPSNPTIME? <cmd-SNTPT>` command to query the current time.)
+-  For TLS protocol version configuration, please refer to the :ref:`modify tls protocol version note <modify-tls-version>`.
 
 .. _cmd-MQTTLONGCLIENTID:
 

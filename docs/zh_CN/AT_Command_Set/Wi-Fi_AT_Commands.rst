@@ -317,17 +317,15 @@ Wi-Fi AT 命令集
 
   .. list::
 
-    - 0: 不支持，仅在查询命令中有效
+    - 0: 在设置命令中表示保持默认值，在查询命令中表示当前值无效
     - 1: 20 MHz
     :not esp32c2: - 2: 40 MHz
 
-.. only:: esp32c5
+- **<bandwidth_5ghz>**：5 GHz 带宽
 
-  - **<bandwidth_5ghz>**：5 GHz 带宽
-
-    - 0: 不支持，仅在查询命令中有效
-    - 1: 20 MHz
-    - 2: 40 MHz
+  - 0: 在设置命令中表示保持默认值，在查询命令中表示当前值无效
+  - 1: 20 MHz
+  - 2: 40 MHz
 
 说明
 ^^^^
@@ -469,7 +467,7 @@ Wi-Fi AT 命令集
 
 ::
 
-    AT+CWJAP=[<"ssid">],[<"pwd">][,<"bssid">][,<pci_en>][,<reconn_interval>][,<listen_interval>][,<scan_mode>][,<jap_timeout>][,<pmf>]
+    AT+CWJAP=[<"ssid">],[<"pwd">][,<"bssid">][,<authmode>][,<reconn_interval>][,<listen_interval>][,<scan_mode>][,<jap_timeout>][,<pmf>]
 
 **响应：**
 
@@ -528,14 +526,29 @@ Wi-Fi AT 命令集
    -  如果 SSID 和密码中有 ``,``、``"``、``\`` 等特殊字符，需转义
    -  AT 支持连接 SSID 为中文的 AP，但是某些路由器或者热点的中文 SSID 不是 UTF-8 编码格式。您可以先扫描 SSID，然后使用扫描到的 SSID 进行连接。
 
--  **<"pwd">**：密码最长 63 字节 ASCII
+-  **<"pwd">**：密码最长 64 字节 ASCII
 -  **<"bssid">**：目标 AP 的 MAC 地址，当多个 AP 有相同的 SSID 时，该参数不可省略
 -  **<channel>**：信道号
 -  **<rssi>**：信号强度
--  **<pci_en>**：PCI 认证
+-  **<authmode>**：Wi-Fi 认证模式阈值。ESP-AT 仅连接认证模式等于或高于此阈值的 AP
 
-   - 0: {IDF_TARGET_NAME} station 可与任何一种加密方式的 AP 连接，包括 OPEN 和 WEP
-   - 1: {IDF_TARGET_NAME} station 可与除 OPEN 和 WEP 之外的任何一种加密方式的 AP 连接
+   - 0: OPEN（当 ``<"pwd">`` 未设置或为空时）或 WEP（当 ``<"pwd">`` 长度大于等于 8 字节时）
+   - 1: WPA_PSK
+   - 2: WPA_PSK
+   - 3: WPA2_PSK
+   - 4: WPA_WPA2_PSK
+   - 5: WPA2_ENTERPRISE
+   - 6: WPA3_PSK
+   - 7: WPA2_WPA3_PSK
+   - 8: WAPI_PSK
+   - 9: OWE
+   - 10: WPA3_ENT_192
+   - 11: WPA3_EXT_PSK
+   - 12: WPA3_EXT_PSK_MIXED_MODE
+   - 13: DPP
+   - 14: WPA3_ENTERPRISE
+   - 15: WPA2_WPA3_ENTERPRISE
+   - 16: WPA_ENTERPRISE
 
 -  **<reconn_interval>**：Wi-Fi 重连间隔，单位：秒，默认值：1，最大值：7200
 
@@ -572,7 +585,7 @@ Wi-Fi AT 命令集
 -  本命令中的 ``<reconn_interval>`` 参数与 :ref:`AT+CWRECONNCFG <cmd-RECONNCFG>` 命令中的 ``<interval_second>`` 参数相同。如果运行本命令时不设置 ``<reconn_interval>`` 参数，Wi-Fi 重连间隔时间将采用默认值 1
 -  如果同时省略 ``<"ssid">`` 和 ``<"password">`` 参数，将使用上一次设置的值
 -  执行命令与设置命令的超时时间相同，默认为 15 秒，可通过参数 ``<jap_timeout>`` 设置
--  不支持通过 `WAPI <https://zh.wikipedia.org/wiki/%E6%97%A0%E7%BA%BF%E5%B1%80%E5%9F%9F%E7%BD%91%E9%89%B4%E5%88%AB%E4%B8%8E%E4%BF%9D%E5%AF%86%E5%9F%BA%E7%A1%80%E7%BB%93%E6%9E%84>`_ 鉴权方式连接路由器。
+-  不支持通过 :term:`WAPI` 鉴权方式连接路由器。
 -  想要获取 IPv6 地址，需要先设置 :ref:`AT+CIPV6=1 <cmd-IPV6>`
 -  回复 ``OK`` 代表 IPv4 网络已经准备就绪，而不代表 IPv6 网络准备就绪。当前 ESP-AT 以 IPv4 网络为主，IPv6 网络为辅。
 -  ``WIFI GOT IPv6 LL`` 代表已经获取到本地链路 IPv6 地址，这个地址是通过 EUI-64 本地计算出来的，不需要路由器参与。由于并行时序，这个打印可能在 ``OK`` 之前，也可能在 ``OK`` 之后。
@@ -631,7 +644,7 @@ Wi-Fi AT 命令集
 
 ::
 
-    AT+CWRECONNCFG=<interval_second>,<repeat_count>
+    AT+CWRECONNCFG=<interval_second>,<repeat_count>[,<reconnect_now>]
 
 **响应：**
 
@@ -652,6 +665,11 @@ Wi-Fi AT 命令集
    -  0: {IDF_TARGET_NAME} station 始终尝试连接 AP
    -  [1,1000]: {IDF_TARGET_NAME} station 按照本参数指定的次数重连 AP
 
+-  **[<reconnect_now>]**：设置完成后，是否立即开始重连 AP，默认值：0。注意：仅当 {IDF_TARGET_NAME} 的 Wi-Fi 尚未获取到 IP 地址时，才会重连；若已获取到 IP 地址，则保持当前连接状态不变
+
+   - 0: 不立即重连 AP
+   - 1: 立即重连 AP
+
 示例
 ^^^^
 
@@ -662,6 +680,9 @@ Wi-Fi AT 命令集
 
     // {IDF_TARGET_NAME} station 在断开连接后不重连 AP
     AT+CWRECONNCFG=0,0
+
+    // 命令设置完成后，立即开始重连 AP
+    AT+CWRECONNCFG=2,50,1
 
 说明
 ^^^^
@@ -864,6 +885,13 @@ Wi-Fi AT 命令集
    - 0: 不支持 WPS
    - 1: 支持 WPS
 
+说明
+^^^^
+
+- 当 SSID 中包含 ``,``、``"`` 或 ``\`` 字符时，需对上述字符进行转义后再配置。
+- 若无法扫描到中文 SSID 的 AP，请确保 SSID 的字符编码与路由器配置一致（通常为 UTF-8）。
+- 当扫描结果异常时，建议使用抓包工具分析 Probe Request 报文中的 SSID 字段，检查 **<"ssid">** 参数是否与目标 AP 的 SSID 完全匹配。
+
 示例
 ^^^^
 
@@ -942,7 +970,7 @@ Wi-Fi AT 命令集
 ^^^^
 
 -  **<"ssid">**：字符串参数，接入点名称
--  **<"pwd">**：字符串参数，密码，范围：8 ~ 63 字节 ASCII
+-  **<"pwd">**：字符串参数，密码，范围：8 ~ 64 字节 ASCII
 -  **<channel>**：信道号
 -  **<ecn>**：加密方式，不支持 WEP
 
@@ -1646,6 +1674,7 @@ Wi-Fi AT 命令集
    -  若启用静态 IPv4 地址，则禁用 DHCP
    -  若启用 DHCP，则禁用静态 IPv4 地址
    -  最后一次配置会覆盖上一次配置
+-  使用静态 IP 时，AT 不提供 IP 冲突检测功能，如有需要请自行实现
 
 示例
 ^^^^
@@ -2082,7 +2111,7 @@ WPA2 企业版错误码以 ``ERR CODE:0x<%08x>`` 格式打印：
 -  若 :ref:`AT+SYSSTORE=1 <cmd-SYSSTORE>`，配置更改将保存到 NVS 分区
 -  使用本命令需开启 Station 模式
 -  使用 TLS 认证方式需使能客户端证书
--  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 WPA2 Enterprise 客户端证书。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
+-  如果您想使用自己的证书，运行时请使用 :ref:`AT+SYSMFG <cmd-SYSMFG>` 命令更新 WPA2 Enterprise 客户端证书（具体步骤请参考 :ref:`AT+SYSMFG 命令示例 <sysmfg-pki>`，证书配置方法与 SSL 证书相同）。如果您想预烧录自己的证书，请参考 :doc:`../Compile_and_Develop/How_to_update_pki_config`。
 -  如果 ``<security>`` 配置为 2，为了校验服务器的证书有效期，请在发送 :ref:`AT+CWJEAP <cmd-JEAP>` 命令前确保 {IDF_TARGET_NAME} 已获取到当前时间。（您可以发送 :ref:`AT+SYSTIMESTAMP=\<unix_timestamp\> <cmd-SETTIME>` 命令来配置当前时间，发送 :ref:`AT+SYSTIMESTAMP? <cmd-SETTIME>` 命令查询当前时间。）
 
 .. _cmd-HOSTNAME:

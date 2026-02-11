@@ -62,6 +62,8 @@ Bluetooth® Low Energy AT Commands
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLESYNCSTOP <cmd-BLESYNCSTOP>`: Stop synchronizing with periodic advertising.
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLEREADPHY <cmd-BLERDPHY>`: Query the current transmitter PHY.
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLESETPHY <cmd-BLESETPHY>`: Set the current transmitter PHY.
+    :esp32 or esp32c3: - :ref:`AT+BLERDRSSI <cmd-BLERDRSSI>`: Query the current connection RSSI.
+    :esp32 or esp32c3: - :ref:`AT+BLEWL <cmd-BLEWL>`: Set the white list.
 
 .. _cmd-ble-intro:
 
@@ -163,17 +165,21 @@ Introduction
     Notes
     ^^^^^
 
-    -  To achieve better performance, it is recommended to disable SoftAP by sending the :ref:`AT+CWMODE=0/1 <cmd-MODE>` command before using Bluetooth LE function. For more details, please refer to the `RF Coexistence <https://docs.espressif.com/projects/esp-idf/en/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ documentation.
-    -  Before using other Bluetooth LE AT commands, you should run this command first to trigger the initialization process.
-    -  After the initialization, the Bluetooth LE role cannot be changed unless you run :ref:`AT+RST <cmd-RST>` to restart the system first and then re-initialize the Bluetooth LE role.
-    -  Before you deinitialize the Bluetooth stack, it is recommended to stop broadcasting, stop scanning, and disconnect all existing connections.
-    -  If Bluetooth LE is initialized, :ref:`AT+CIPMODE <cmd-IPMODE>` cannot be set to 1.
-    -  In dual mode, both server-specific and client-specific commands are available.
-    -  In dual-mode, BLE passthrough-related commands and BLE auto-passthrough at startup are not supported.
-    -  In dual mode, it is possible to set advertising parameters, query advertising parameters, and start or stop advertising.
-    -  In dual mode, it is possible to set scanning parameters, query scanning parameters, and start or stop scanning.
-    -  In dual mode, it is possible to initiate all connection-related parameter updates and query connection parameters.
-    -  In dual mode, the total number of connections and advertisements combined is limited to 3.
+    .. list::
+
+      -  To achieve better performance, it is recommended to disable SoftAP by sending the :ref:`AT+CWMODE=0/1 <cmd-MODE>` command before using Bluetooth LE function. For more details, please refer to the `RF Coexistence <https://docs.espressif.com/projects/esp-idf/en/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ documentation.
+      -  Before using other Bluetooth LE AT commands, you should run this command first to trigger the initialization process.
+      -  The Bluetooth LE role cannot be changed directly after initialization. To switch roles, first execute :ref:`AT+BLEINIT=0 <cmd-BINIT>` to deinitialize Bluetooth LE, or execute :ref:`AT+RST <cmd-RST>` to restart the system, then re-initialize the Bluetooth LE role.
+      -  Before you deinitialize the Bluetooth stack, it is recommended to stop broadcasting, stop scanning, and disconnect all existing connections.
+      -  If Bluetooth LE is initialized, :ref:`AT+CIPMODE <cmd-IPMODE>` cannot be set to 1.
+      -  In dual mode, both server-specific and client-specific commands are available.
+      -  In dual-mode, BLE passthrough-related commands and BLE auto-passthrough at startup are not supported.
+      -  In dual mode, it is possible to set advertising parameters, query advertising parameters, and start or stop advertising.
+      -  In dual mode, it is possible to set scanning parameters, query scanning parameters, and start or stop scanning.
+      -  In dual mode, it is possible to initiate all connection-related parameter updates and query connection parameters.
+      -  In dual mode, the total number of connections and advertisements combined is limited to 3.
+      :esp32c2 or esp32c5 or esp32c6 or esp32c61: - Service Creation: When initializing BLE as a server role (``<init>`` = 2) or dual role (``<init>`` = 3), the GATT services are automatically created. Separate AT commands to create services are not required.
+      :esp32 or esp32c3: - Service Creation: After initializing BLE as a server role or dual role (set ``<init>`` to 2 or 3), please execute :ref:`AT+BLEGATTSSRVCRE <cmd-GSSRVCRE>` and :ref:`AT+BLEGATTSSRVSTART <cmd-GSSRVSTART>` in sequence to create and start GATT services.
 
     Example
     ^^^^^^^^
@@ -459,8 +465,8 @@ Introduction
 
     -  **<enable>**:
 
-    -  1: enable continuous scanning.
-    -  0: disable continuous scanning.
+        -  1: enable continuous scanning.
+        -  0: disable continuous scanning.
 
     -  **[<duration>]**: optional parameter. Unit: second.
 
@@ -472,10 +478,16 @@ Introduction
 
     -  **[<filter_type>]**: filtering option.
 
-    -  1: "MAC".
-    -  2: "NAME".
+        -  1: "MAC".
+        -  2: "NAME".
+        -  3: "UUID".
+        -  4: "RSSI".
 
-    -  **<filter_param>**: filtering parameter showing the remote device MAC address or remote device name.
+    -  **[<filter_param>]**: filtering parameter showing the remote device MAC address or remote device name or UUID or RSSI.
+    -  **[<duplicate_check>]**: duplicate check.
+
+        -  1: perform duplicate check.
+
     -  **<addr>**: Bluetooth LE address.
     -  **<rssi>**: signal strength.
     -  **<adv_data>**: advertising data.
@@ -487,6 +499,11 @@ Introduction
 
     -  The response ``OK`` does not necessarily come before the response ``+BLESCAN:<addr>,<rssi>,<adv_data>,<scan_rsp_data>,<addr_type>``. It may be output before ``+BLESCAN:<addr>,<rssi>,<adv_data>,<scan_rsp_data>,<addr_type>`` or after it.
     -  To obtain the scan response data, use the :ref:`AT+BLESCANPARAM <BLE-AT>` command to set the scan type to ``active scan (AT+BLESCANPARAM=1,0,0,100,50)``, and the peer device needs to set the ``scan_rsp_data``.
+    -  If the filter type is MAC, the default filter is supported, such as ``AT+BLESCAN=1,3,1,"24:0A:C4"``.
+    -  If the filter type is NAME, the default filter is supported, such as ``AT+BLESCAN=1,3,2,"ESP"``.
+    -  UUID filtering supports 16-bit, 32-bit, and 128-bit UUIDs. The UUID filter parameter must be specified as a hexadecimal string. For example, to set the UUID filter parameter to "0xFF01", use the command: ``AT+BLESCAN=1,3,3,"FF01"``.
+    -  The value of the RSSI filter parameter is an integer. For example, if you want to set the RSSI filter parameter to -50, the command should be ``AT+BLESCAN=1,3,4,-50``. Only devices with RSSI greater than or equal to -50 dBm will be returned.
+    -  To enable the duplicate check, use the :ref:`AT+BLESCAN <BLE-AT>` command to set the duplicate check parameter to ``1`` (If this parameter is not set, the duplicate-checking function is disabled.). The duplicate check function needs to be used together with the previous filter parameters.
 
     Example
     ^^^^^^^^
@@ -498,6 +515,9 @@ Introduction
         AT+BLESCAN=0    // stop scanning
         AT+BLESCAN=1,3,1,"24:0A:C4:96:E6:88"  // start scanning, filter type is MAC address
         AT+BLESCAN=1,3,2,"ESP-AT"  // start scanning, filter type is device name
+        AT+BLESCAN=1,3,3,"FF01"  // start scanning, filter type is UUID
+        AT+BLESCAN=1,3,4,-50  // start scanning, filter type is RSSI
+        AT+BLESCAN=1,3,1,"24:0A:C4:96:E6:88",1  // start scanning, filter type is MAC address, perform duplicate check
 
     .. _cmd-BSCANR:
 
@@ -1052,6 +1072,7 @@ Introduction
     -  :ref:`AT+BLEGATTCWR <cmd-GCWR>`
     -  :ref:`AT+BLEGATTSIND <cmd-GSIND>`
     -  If the :ref:`AT+BLECONN? <cmd-BCONN>` is executed when the Bluetooth LE is not initialized (:ref:`AT+BLEINIT=0 <cmd-BINIT>`), the system will not output ``+BLECONN:<conn_index>,<remote_address>`` .
+    -  Supports address resolution.
 
     Example
     ^^^^^^^^
@@ -1289,9 +1310,10 @@ Introduction
 
     .. list::
 
-        - Bluetooth LE connection has to be established first.
-        - Only the client can call this command to set the length of MTU.
-        :esp32 or esp32c3: - The actual length of MTU needs to be negotiated. The ``OK`` response only indicates an attempt to negotiate the length. The actual length may not be the value you set. Therefore, it is recommended to run command :ref:`AT+BLECFGMTU? <cmd-BMTU>` to query the actual length.
+        - The Bluetooth LE connection must be established first. If this command is not executed, MTU negotiation will not be initiated automatically after the connection is established, and the default length is 23 bytes.
+        :esp32 or esp32c3: - Both client and server can use this command to initiate MTU negotiation. For servers, execute :ref:`AT+BLECONN <cmd-BCONN>` first with the same <conn_index> to establish a reverse connection to the client, then execute this command to update the MTU.
+        :esp32 or esp32c3: - You can specify the desired MTU value in the command. The MTU length needs to be negotiated between both parties. The ``OK`` response only indicates that a negotiation request has been initiated. The actual MTU may be less than the set value. It is recommended to query the actual negotiated result using :ref:`AT+BLECFGMTU? <cmd-BMTU>`.
+        :esp32c2 or esp32c5 or esp32c6 or esp32c61: - Both client and server can use this command to initiate MTU negotiation. This command does not accept an MTU length parameter and only triggers negotiation. The default negotiated value is 203 bytes. To use a higher MTU value, configure it during compilation: ``python build.py menuconfig`` > ``Component config`` > ``Bluetooth`` > ``NimBLE Options`` > ``Preferred MTU size in octets``.
 
     Example
     ^^^^^^^^
@@ -1624,7 +1646,12 @@ Introduction
     -  **<conn_index>**: index of Bluetooth LE connection. Range: [0,2].
     -  **<srv_index>**: service's index. It can be queried with command :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>`.
     -  **<char_index>**: characteristic's index. It can be queried with command :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>`.
-    -  **<length>**: data length. The maximum length is ``( :ref:`MTU <cmd-BMTU>` - 3)``.
+    -  **<length>**: data length. The maximum length is (:ref:`MTU <cmd-BMTU>` - 3).
+
+    Note
+    ^^^^
+
+    -  The maximum data length per transmission is (:ref:`MTU <cmd-BMTU>` - 3) bytes. If you send more than this, the underlying layer will automatically split the data into packets for transmission.
 
     Example
     ^^^^^^^^
@@ -1768,7 +1795,7 @@ Introduction
     -  **<srv_index>**: service's index. It can be queried with command :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>`.
     -  **<char_index>**: characteristic's index; it can be fetched with command :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>`.
 
-    .. only:: esp32c2 or esp32c5 or esp32c6 or esp32c61
+    .. only:: esp32 or esp32c3
 
         -  **[<desc_index>]**: descriptor's index.
 
@@ -2688,7 +2715,7 @@ Introduction
 
         AT+BLESETKEY=123456
 
-.. only:: esp32 or esp32c3 
+.. only:: esp32 or esp32c3
 
     .. _cmd-BLEHIDINIT:
 
@@ -2755,6 +2782,10 @@ Introduction
     ^^^^^
 
     -  The Bluetooth LE HID command cannot be used at the same time with general GATT/GAP commands.
+
+    .. only:: esp32 or esp32c3
+
+        -  The Bluetooth LE HID commands cannot be used at the same time with :ref:`BluFi commands <cmd-BLUFI>`.
 
     Example
     ^^^^^^^^
@@ -2897,216 +2928,224 @@ Introduction
 
         AT+BLEHIDCONSUMER=233   // volume up
 
-.. _cmd-BLUFI:
+.. only:: esp32 or esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2
 
-:ref:`AT+BLUFI <BLE-AT>`: Start or Stop BluFi
------------------------------------------------------------------
+    .. _cmd-BLUFI:
 
-Query Command
-^^^^^^^^^^^^^
+    :ref:`AT+BLUFI <BLE-AT>`: Start or Stop BluFi
+    -----------------------------------------------------------------
 
-**Function:**
+    Query Command
+    ^^^^^^^^^^^^^
 
-Query the status of BluFi.
+    **Function:**
 
-**Command:**
+    Query the status of BluFi.
 
-::
+    **Command:**
 
-    AT+BLUFI?
+    ::
 
-**Response:**
+        AT+BLUFI?
 
-If BluFi is not started, it will return:
+    **Response:**
 
-::
+    If BluFi is not started, it will return:
 
-    +BLUFI:0
+    ::
 
-    OK
+        +BLUFI:0
 
-If BluFi is started, it will return:
+        OK
 
-::
+    If BluFi is started, it will return:
 
-    +BLUFI:1
+    ::
 
-    OK
+        +BLUFI:1
 
-Set Command
-^^^^^^^^^^^
+        OK
 
-**Function:**
+    Set Command
+    ^^^^^^^^^^^
 
-Start or stop BluFi.
+    **Function:**
 
-**Command:**
+    Start or stop BluFi.
 
-::
+    **Command:**
 
-    AT+BLUFI=<option>[,<auth floor>]
+    ::
 
-**Response:**
+        AT+BLUFI=<option>[,<auth floor>]
 
-::
+    **Response:**
 
-    OK
+    ::
 
-Parameter
-^^^^^^^^^^
+        OK
 
--  **<option>**:
+    Parameter
+    ^^^^^^^^^^
 
-   -  0: stop BluFi
-   -  1: start BluFi
+    -  **<option>**:
 
--  **<auth floor>**: Wi-Fi authentication mode floor. ESP-AT will not connect to the AP whose authmode is lower than this floor.
+       -  0: stop BluFi
+       -  1: start BluFi
 
-   -  0: OPEN (Default)
-   -  1: WEP
-   -  2: WPA_PSK
-   -  3: WPA2_PSK
-   -  4: WPA_WPA2_PSK
-   -  5: WPA2_ENTERPRISE
-   -  6: WPA3_PSK
-   -  7: WPA2_WPA3_PSK
-   -  8: WAPI_PSK
-   -  9: OWE
-   -  10: WPA3_ENT_192
-   -  11: WPA3_EXT_PSK
-   -  12: WPA3_EXT_PSK_MIXED_MODE
-   -  13: DPP
-   -  14: WPA3_ENTERPRISE
-   -  15: WPA2_WPA3_ENTERPRISE
+    -  **<auth floor>**: Wi-Fi authentication mode floor. ESP-AT will not connect to the AP whose authmode is lower than this floor.
 
-Note
-^^^^
+       -  0: OPEN (Default)
+       -  1: WEP
+       -  2: WPA_PSK
+       -  3: WPA2_PSK
+       -  4: WPA_WPA2_PSK
+       -  5: WPA2_ENTERPRISE
+       -  6: WPA3_PSK
+       -  7: WPA2_WPA3_PSK
+       -  8: WAPI_PSK
+       -  9: OWE
+       -  10: WPA3_ENT_192
+       -  11: WPA3_EXT_PSK
+       -  12: WPA3_EXT_PSK_MIXED_MODE
+       -  13: DPP
+       -  14: WPA3_ENTERPRISE
+       -  15: WPA2_WPA3_ENTERPRISE
 
-- You can only start or stop BluFi when Bluetooth LE is not initialized (:ref:`AT+BLEINIT=0 <cmd-BINIT>`).
-- To achieve better performance, it is recommended to disable SoftAP by sending the :ref:`AT+CWMODE=0/1 <cmd-MODE>` command before using BluFi function. For more details, please refer to the `RF Coexistence <https://docs.espressif.com/projects/esp-idf/en/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ documentation.
-- After BluFi network configuration is completed, please send the :ref:`AT+BLUFI=0 <cmd-BLUFI>` command to disable BluFi and release resources.
+    Note
+    ^^^^
 
-Example
-^^^^^^^^
+    - You can only start or stop BluFi when Bluetooth LE is not initialized (:ref:`AT+BLEINIT=0 <cmd-BINIT>`).
+    - During the BluFi network configuration process, when the {IDF_TARGET_NAME} receives the SSID and password sent from the phone, it will output ``+SSID:<ssid>`` and ``+PASSWORD:<password>`` respectively.
 
-::
+    .. only:: esp32 or esp32c3
 
-    AT+BLUFI=1
+        - The BluFi commands cannot be used at the same time with :ref:`Bluetooth LE HID commands <cmd-BLEHIDINIT>`.
 
-.. _cmd-BLUFINAME:
+    - To achieve better performance, it is recommended to disable SoftAP by sending the :ref:`AT+CWMODE=0/1 <cmd-MODE>` command before using BluFi function. For more details, please refer to the `RF Coexistence <https://docs.espressif.com/projects/esp-idf/en/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ documentation.
+    - After BluFi network configuration is completed, please send the :ref:`AT+BLUFI=0 <cmd-BLUFI>` command to disable BluFi and release resources.
 
-:ref:`AT+BLUFINAME <BLE-AT>`: Query/Set BluFi Device Name
-------------------------------------------------------------------------------
+    Example
+    ^^^^^^^^
 
-Query Command
-^^^^^^^^^^^^^
+    ::
 
-**Function:**
+        AT+BLUFI=1
 
-Query the BluFi name.
+    .. _cmd-BLUFINAME:
 
-**Command:**
+    :ref:`AT+BLUFINAME <BLE-AT>`: Query/Set BluFi Device Name
+    ------------------------------------------------------------------------------
 
-::
+    Query Command
+    ^^^^^^^^^^^^^
 
-    AT+BLUFINAME?
+    **Function:**
 
-**Response:**
+    Query the BluFi name.
 
-::
+    **Command:**
 
-    +BLUFINAME:<device_name>
-    OK
+    ::
 
-Set Command
-^^^^^^^^^^^
+        AT+BLUFINAME?
 
-**Function:**
+    **Response:**
 
-Set the BluFi device name.
+    ::
 
-**Command:**
+        +BLUFINAME:<device_name>
+        OK
 
-::
+    Set Command
+    ^^^^^^^^^^^
 
-    AT+BLUFINAME=<device_name>
+    **Function:**
 
-**Response:**
+    Set the BluFi device name.
 
-::
+    **Command:**
 
-    OK
+    ::
 
-Parameter
-^^^^^^^^^^
+        AT+BLUFINAME=<device_name>
 
--  **<device_name>**: the name of BluFi device.
+    **Response:**
 
-Notes
-^^^^^
+    ::
 
--  If you need to set BluFi name, please set it before command :ref:`AT+BLUFI=1 <cmd-BLUFI>`. Otherwise, it will use the default name ``BLUFI_DEVICE``.
--  The maximum length of BluFi name is 26 bytes.
--  The Blufi APP can be downloaded from the app store.
+        OK
 
-Example
-^^^^^^^^
+    Parameter
+    ^^^^^^^^^^
 
-::
+    -  **<device_name>**: the name of BluFi device.
 
-    AT+BLUFINAME="BLUFI_DEV"
-    AT+BLUFINAME?
+    Notes
+    ^^^^^
 
-.. _cmd-BLUFISEND:
+    -  If you need to set BluFi name, please set it before command :ref:`AT+BLUFI=1 <cmd-BLUFI>`. Otherwise, it will use the default name ``BLUFI_DEVICE``.
+    -  The maximum length of BluFi name is 26 bytes.
+    -  The Blufi APP can be downloaded from the app store.
 
-:ref:`AT+BLUFISEND <BLE-AT>`: Send User-Customized Data over BluFi
------------------------------------------------------------------------------------------------------------------
+    Example
+    ^^^^^^^^
 
-Set Command
-^^^^^^^^^^^
+    ::
 
-**Function:**
+        AT+BLUFINAME="BLUFI_DEV"
+        AT+BLUFINAME?
+
+    .. _cmd-BLUFISEND:
+
+    :ref:`AT+BLUFISEND <BLE-AT>`: Send User-Customized Data over BluFi
+    -----------------------------------------------------------------------------------------------------------------
+
+    Set Command
+    ^^^^^^^^^^^
+
+    **Function:**
  
-Send user-customized data from the ESP side to a phone over BluFi.
+    Send user-customized data from the ESP side to a phone over BluFi.
 
-**Command:**
+    **Command:**
 
-::
+    ::
 
-    AT+BLUFISEND=<length>
+        AT+BLUFISEND=<length>
 
-**Response:**
+    **Response:**
 
-::
+    ::
 
-    >
+        >
 
-The symbol ``>`` indicates that AT is ready for receiving serial data and you can enter data now. When the requirement of data length determined by the parameter <length> is met, the transmission starts.
+    The symbol ``>`` indicates that AT is ready for receiving serial data and you can enter data now. When the requirement of data length determined by the parameter <length> is met, the transmission starts.
 
-If the data transmission is successful, AT returns:
+    If the data transmission is successful, AT returns:
 
-::
+    ::
 
-   OK
+       OK
 
-Parameters
-^^^^^^^^^^
+    Parameters
+    ^^^^^^^^^^
 
--  **<length>**: customized data length. Unit: byte.
+    -  **<length>**: customized data length. Unit: byte.
 
-Notes
-^^^^^
+    Notes
+    ^^^^^
 
--  The length of customized data cannot exceed 600 bytes.
--  If your ESP chip receives customized data from the phone, the data will be printed in the form of ``+BLUFIDATA:<len>,<data>``.
+    -  The length of customized data cannot exceed 600 bytes.
+    -  If your ESP chip receives customized data from the phone, the data will be printed in the form of ``+BLUFIDATA:<len>,<data>``.
 
-Example
-^^^^^^^^
+    Example
+    ^^^^^^^^
 
-::
+    ::
 
-    AT+BLUFISEND=4 
-    // After the symbol ">" shows, input 4 bytes of data, such as "1234". Then the data will be transmitted automatically.
+        AT+BLUFISEND=4 
+        // After the symbol ">" shows, input 4 bytes of data, such as "1234". Then the data will be transmitted automatically.
 
 .. only:: esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2
 
@@ -3417,3 +3456,102 @@ Example
         AT+BLEINIT=1   // Role: client
         AT+BLECONN=0,"24:0a:c4:09:34:23"
         AT+BLESETPHY=0,1
+
+.. only:: esp32 or esp32c3
+    
+    .. _cmd-BLERDRSSI:
+
+    :ref:`AT+BLERDRSSI <BLE-AT>`: Query the current connection RSSI
+    -----------------------------------------------------------------------------
+
+    Set Command
+    ^^^^^^^^^^^
+
+    **Function:**
+
+    Query the current connection RSSI.
+
+    **Command:**
+
+    ::
+
+        AT+BLERDRSSI=<conn_index>
+
+    **Response:**
+
+    ::
+
+        +BLERDRSSI:<rssi>
+        OK
+
+    Parameters
+    ^^^^^^^^^^
+
+    -  **<conn_index>**: index of Bluetooth LE connection.
+
+    Notes
+    ^^^^^
+
+    -  This command is used to obtain the signal strength of the connection, so a BLE connection must be established first.
+
+    Example
+    ^^^^^^^^
+
+    ::
+
+        AT+BLEINIT=1   // Role: client
+        AT+BLECONN=0,"24:0a:c4:09:34:23" // establish a BLE connection
+        AT+BLERDRSSI=0 // query current connection RSSI
+    
+    .. _cmd-BLEWL:
+
+    :ref:`AT+BLEWL <BLE-AT>`: Set the white list
+    -----------------------------------------------------------------------------
+
+    Set Command
+    ^^^^^^^^^^^
+
+    **Function:**
+
+    Set the white list.
+
+    **Command:**
+
+    ::
+
+        AT+BLEWL=<add_or_rmv>[,<addr_type>,<addr>]
+
+    **Response:**
+
+    ::
+
+        OK
+
+    Parameters
+    ^^^^^^^^^^
+
+    -  **<add_or_rmv>**:
+
+      -  0: remove all devices from the white list
+      -  1: add a device to the white list
+
+    -  **[<addr_type>]**: address type
+
+      - 0: Public Address
+      - 1: Random Address
+
+    -  **[<addr>]**: device address
+
+    Notes
+    ^^^^^
+
+    -  If <add_or_rmv> is set to 0, the <addr_type> and <addr> parameters are not needed.
+
+    Example
+    ^^^^^^^^
+
+    ::
+
+        AT+BLEWL=1,0,"24:0a:c4:09:34:23" // add a device to the white list
+        AT+BLEWL=0 // remove all devices from the white list
+    

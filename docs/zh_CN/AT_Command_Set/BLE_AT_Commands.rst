@@ -62,6 +62,8 @@ Bluetooth® Low Energy AT 命令集
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLESYNCSTOP <cmd-BLESYNCSTOP>`：停止周期性广播同步
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLEREADPHY <cmd-BLERDPHY>`：查询当前连接使用的 PHY
     :esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2: - :ref:`AT+BLESETPHY <cmd-BLESETPHY>`：设置当前连接使用的 PHY
+    :esp32 or esp32c3: - :ref:`AT+BLERDRSSI <cmd-BLERDRSSI>`：查询当前连接的 RSSI
+    :esp32 or esp32c3: - :ref:`AT+BLEWL <cmd-BLEWL>`：设置白名单
 
 .. _cmd-ble-intro:
 
@@ -163,17 +165,21 @@ Bluetooth® Low Energy AT 命令集
     说明
     ^^^^
 
-    -  为获得更好的性能，建议在使用 Bluetooth LE 功能前，先发送 :ref:`AT+CWMODE=0/1 <cmd-MODE>` 命令禁用 SoftAP。如您想了解更多细节，请阅读 `RF 共存 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ 文档。
-    -  使用其它 Bluetooth LE 命令之前，请先调用本命令，初始化 Bluetooth LE 角色。
-    -  Bluetooth LE 角色初始化后，不能直接切换。如需切换角色，需要先调用 :ref:`AT+RST <cmd-RST>` 命令重启系统，再重新初始化 Bluetooth LE 角色。
-    -  建议在注销 Bluetooth LE 之前，停止正在进行的广播、扫描并断开所有的连接。
-    -  如果 Bluetooth LE 已初始化，则 :ref:`AT+CIPMODE <cmd-IPMODE>` 无法设置为 1。
-    -  如果设置为双角色，则既可以使用服务器角色相关的命令，也可以使用客户端角色相关的命令。
-    -  在双角色模式下，BLE 透传相关命令和 BLE 自动透传开机功能不支持。
-    -  在双角色模式下，可以设置广播参数、查询广播参数并开始或停止广播。
-    -  在双角色模式下，可以设置扫描参数、查询扫描参数并开始或停止扫描。
-    -  在双角色模式下，可以发起所有连接相关参数更新并查询连接参数。
-    -  在双角色模式下，连接和广播的总数限制为 3。
+    .. list::
+
+      -  为获得更好的性能，建议在使用 Bluetooth LE 功能前，先发送 :ref:`AT+CWMODE=0/1 <cmd-MODE>` 命令禁用 SoftAP。如您想了解更多细节，请阅读 `RF 共存 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ 文档。
+      -  使用其它 Bluetooth LE 命令之前，请先调用本命令，初始化 Bluetooth LE 角色。
+      -  Bluetooth LE 角色初始化后，不能直接切换角色。如需切换角色，请先执行 :ref:`AT+BLEINIT=0 <cmd-BINIT>` 注销 Bluetooth LE，或执行 :ref:`AT+RST <cmd-RST>` 重启系统，然后重新初始化 Bluetooth LE 角色。
+      -  建议在注销 Bluetooth LE 之前，停止正在进行的广播、扫描并断开所有的连接。
+      -  如果 Bluetooth LE 已初始化，则 :ref:`AT+CIPMODE <cmd-IPMODE>` 无法设置为 1。
+      -  如果设置为双角色，则既可以使用服务器角色相关的命令，也可以使用客户端角色相关的命令。
+      -  在双角色模式下，BLE 透传相关命令和 BLE 自动透传开机功能不支持。
+      -  在双角色模式下，可以设置广播参数、查询广播参数并开始或停止广播。
+      -  在双角色模式下，可以设置扫描参数、查询扫描参数并开始或停止扫描。
+      -  在双角色模式下，可以发起所有连接相关参数更新并查询连接参数。
+      -  在双角色模式下，连接和广播的总数限制为 3。
+      :esp32c2 or esp32c5 or esp32c6 or esp32c61: - 服务创建说明：当初始化 BLE 为 server 角色（``<init>`` 为 2）或双角色（``<init>`` 为 3）时，会自动创建 GATT 服务，无需单独的 AT 命令创建服务。
+      :esp32 or esp32c3: - 服务创建说明：初始化 BLE 为 server 或双角色（``<init>`` 为 2 或 3）后，请依次执行 :ref:`AT+BLEGATTSSRVCRE <cmd-GSSRVCRE>` 和 :ref:`AT+BLEGATTSSRVSTART <cmd-GSSRVSTART>` 来创建并启动 GATT 服务。
 
     示例
     ^^^^
@@ -444,7 +450,7 @@ Bluetooth® Low Energy AT 命令集
 
     ::
 
-        AT+BLESCAN=<enable>[,<duration>][,<filter_type>,<filter_param>]
+        AT+BLESCAN=<enable>[,<duration>][,<filter_type>,<filter_param>][,<duplicate_check>]
 
     **响应：**
 
@@ -459,8 +465,8 @@ Bluetooth® Low Energy AT 命令集
 
     -  **<enable>**：
 
-    -  1: 开始持续扫描
-    -  0: 停止持续扫描
+        -  1: 开始持续扫描
+        -  0: 停止持续扫描
 
     -  **[<duration>]**：扫描持续时间，单位：秒。
 
@@ -472,10 +478,16 @@ Bluetooth® Low Energy AT 命令集
 
     -  **[<filter_type>]**：过滤选项
 
-    -  1: "MAC"
-    -  2: "NAME"
+        -  1: "MAC"
+        -  2: "NAME"
+        -  3: "UUID"
+        -  4: "RSSI"
 
-    -  **<filter_param>**：过滤参数，表示对方设备 MAC 地址或名称
+    -  **[<filter_param>]**：过滤参数，表示对方设备 MAC 地址或名称或 UUID 或 RSSI
+    -  **[<duplicate_check>]**：重复检查
+
+        -  1: 进行重复检查
+
     -  **<addr>**：Bluetooth LE 地址
     -  **<rssi>**：信号强度
     -  **<adv_data>**：广播数据
@@ -487,6 +499,11 @@ Bluetooth® Low Energy AT 命令集
 
     -  响应中的 ``OK`` 和 ``+BLESCAN:<addr>,<rssi>,<adv_data>,<scan_rsp_data>,<addr_type>`` 在输出顺序上没有严格意义上的先后顺序。``OK`` 可能在 ``+BLESCAN:<addr>,<rssi>,<adv_data>,<scan_rsp_data>,<addr_type>`` 之前输出，也有可能在 ``+BLESCAN:<addr>,<rssi>,<adv_data>,<scan_rsp_data>,<addr_type>`` 之后输出。 
     -  如果您想要获得扫描响应数据，需要使用 :ref:`AT+BLESCANPARAM <cmd-BSCANP>` 命令设置扫描方式为 ``active scan (AT+BLESCANPARAM=1,0,0,100,50)``，并且对端设备需要设置 ``scan rsp data``，才能获得扫描响应数据。
+    -  如果根据 MAC 地址过滤，可以支持缺省过滤，如 ``AT+BLESCAN=1,3,1,"24:0A:C4"``。
+    -  如果根据设备名称过滤，可以支持缺省过滤，如 ``AT+BLESCAN=1,3,2,"ESP"``。
+    -  UUID 过滤功能支持 16 位、32 位及 128 位格式的 UUID。参数值需以十六进制字符串形式提供。例如，若需将过滤 UUID 设置为 "0xFF01"，可使用命令 ``AT+BLESCAN=1,3,3,"FF01"``。
+    -  RSSI 过滤参数的值为整数。例如，若想设置 RSSI 过滤参数为 -50，则命令为 ``AT+BLESCAN=1,3,4,-50``。只会返回 RSSI 大于等于 -50 dBm 的设备。
+    -  如需启用重复检查功能，须先用 :ref:`AT+BLESCAN <cmd-BSCAN>` 命令将重复检查参数设为 ``1`` （如果不设置此参数，即关闭重复检查功能）。该功能需与前述过滤参数配合使用。
 
     示例
     ^^^^
@@ -498,6 +515,9 @@ Bluetooth® Low Energy AT 命令集
         AT+BLESCAN=0    // 停止扫描
         AT+BLESCAN=1,3,1,"24:0A:C4:96:E6:88"  // 开始扫描，过滤类型为 MAC 地址
         AT+BLESCAN=1,3,2,"ESP-AT"  // 开始扫描，过滤类型为设备名称
+        AT+BLESCAN=1,3,3,"FF01"  // 开始扫描，过滤类型为 UUID
+        AT+BLESCAN=1,3,4,-50  // 开始扫描，过滤类型为 RSSI
+        AT+BLESCAN=1,3,1,"24:0A:C4:96:E6:88",1  // 开始扫描，过滤类型为 MAC 地址，进行重复检查
 
     .. _cmd-BSCANR:
 
@@ -1052,6 +1072,7 @@ Bluetooth® Low Energy AT 命令集
     -  :ref:`AT+BLEGATTCWR <cmd-GCWR>`
     -  :ref:`AT+BLEGATTSIND <cmd-GSIND>`
     -  如果 :ref:`AT+BLECONN? <cmd-BCONN>` 在 Bluetooth LE 未初始的情况下执行 (:ref:`AT+BLEINIT=0 <cmd-BINIT>`)，则系统不会输出 ``+BLECONN:<conn_index>,<remote_address>`` 。
+    -  支持地址解析功能。
 
     示例
     ^^^^
@@ -1289,9 +1310,10 @@ Bluetooth® Low Energy AT 命令集
 
     .. list::
 
-        - 本命令要求先建立 Bluetooth LE 连接。
-        - 仅支持客户端运行本命令设置 MTU 的长度。
-        :esp32 or esp32c3: - MTU 的实际长度需要协商，响应 ``OK`` 只表示尝试协商 MTU 长度，因此设置长度不一定生效，建议调用 :ref:`AT+BLECFGMTU? <cmd-BMTU>` 查询实际 MTU 长度
+        - 使用前需先建立 Bluetooth LE 连接。若未主动执行本命令，连接建立后将不会主动发起 MTU 协商，默认使用 23 字节长度。
+        :esp32 or esp32c3: - 客户端和服务端均可使用本命令发起 MTU 协商。服务端需先执行 :ref:`AT+BLECONN <cmd-BCONN>` 使用相同的 <conn_index> 反向连接下客户端，再执行本命令更新 MTU。
+        :esp32 or esp32c3: - 可在命令中指定期望的 MTU 值。MTU 长度需双方协商，返回 ``OK`` 仅表示发起协商请求，实际 MTU 可能小于设定值，建议通过 :ref:`AT+BLECFGMTU? <cmd-BMTU>` 查询实际协商结果。
+        :esp32c2 or esp32c5 or esp32c6 or esp32c61: - 客户端和服务端均可使用本命令发起 MTU 协商。本命令不接受 MTU 长度参数，仅触发协商，默认协商值为 203 字节。如需更高 MTU 值，请在编译时配置：``python build.py menuconfig`` > ``Component config`` > ``Bluetooth`` > ``NimBLE Options`` > ``Preferred MTU size in octets``。
 
     示例
     ^^^^
@@ -1624,7 +1646,12 @@ Bluetooth® Low Energy AT 命令集
     -  **<conn_index>**：Bluetooth LE 连接号，范围：[0,2]。
     -  **<srv_index>**：服务序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
     -  **<char_index>**：服务特征的序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
-    -  **<length>**：数据长度，最大长度： ``（ :ref:`MTU <cmd-BMTU>` - 3）``。
+    -  **<length>**：数据长度，最大长度： (:ref:`MTU <cmd-BMTU>` – 3)。
+
+    说明
+    ^^^^
+
+    -  数据单次发送的最大长度为 (:ref:`MTU <cmd-BMTU>` – 3) 字节。若设置的长度超过此值，底层会自动分包传输。
 
     示例
     ^^^^
@@ -1692,7 +1719,7 @@ Bluetooth® Low Energy AT 命令集
     -  **<conn_index>**：Bluetooth LE 连接号，范围：[0,2]。
     -  **<srv_index>**：服务序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
     -  **<char_index>**：服务特征的序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
-    -  **<length>**：数据长度，最大长度：（:ref:`MTU <cmd-BMTU>` - 3）。
+    -  **<length>**：数据长度，最大长度：（:ref:`MTU <cmd-BMTU>` – 3）。
 
     示例
     ^^^^
@@ -1768,7 +1795,7 @@ Bluetooth® Low Energy AT 命令集
     -  **<srv_index>**：服务序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
     -  **<char_index>**：服务特征的序号，可运行 :ref:`AT+BLEGATTSCHAR? <cmd-GSCHAR>` 查询。
 
-    .. only:: esp32c2 or esp32c5 or esp32c6 or esp32c61
+    .. only:: esp32 or esp32c3
 
         -  **[<desc_index>]**：特征描述符序号：
 
@@ -2055,7 +2082,7 @@ Bluetooth® Low Energy AT 命令集
 
         AT+BLEGATTCWR=<conn_index>,<srv_index>,<char_index>[,<desc_index>],<length>
 
-    **Response:**
+    **响应：**
 
     ::
 
@@ -2756,6 +2783,10 @@ Bluetooth® Low Energy AT 命令集
 
     -  Bluetooth LE HID 无法与通用 GATT/GAP 命令同时使用。
 
+    .. only:: esp32 or esp32c3
+
+        -  Bluetooth LE HID 命令无法与 :ref:`BluFi 命令 <cmd-BLUFI>` 同时使用。
+
     示例
     ^^^^
 
@@ -2897,216 +2928,224 @@ Bluetooth® Low Energy AT 命令集
 
         AT+BLEHIDCONSUMER=233   // 调高音量
 
-.. _cmd-BLUFI:
+.. only:: esp32 or esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2
 
-:ref:`AT+BLUFI <BLE-AT>`：开启或关闭 BluFi
---------------------------------------------------------------
+    .. _cmd-BLUFI:
 
-查询命令
-^^^^^^^^
+    :ref:`AT+BLUFI <BLE-AT>`：开启或关闭 BluFi
+    --------------------------------------------------------------
 
-**功能：**
+    查询命令
+    ^^^^^^^^
 
-查询 BluFi 状态
+    **功能：**
 
-**命令：**
+    查询 BluFi 状态
 
-::
+    **命令：**
 
-    AT+BLUFI?
+    ::
 
-**响应：**
+        AT+BLUFI?
 
-若 BluFi 未开启，则返回：
+    **响应：**
 
-::
+    若 BluFi 未开启，则返回：
 
-    +BLUFI:0
+    ::
 
-    OK
+        +BLUFI:0
 
-若 BluFi 已开启，则返回：
+        OK
 
-::
+    若 BluFi 已开启，则返回：
 
-    +BLUFI:1
+    ::
 
-    OK
+        +BLUFI:1
 
-设置命令
-^^^^^^^^
+        OK
 
-**功能：**
+    设置命令
+    ^^^^^^^^
 
-开启或关闭 BluFi
+    **功能：**
 
-**命令：**
+    开启或关闭 BluFi
 
-::
+    **命令：**
 
-    AT+BLUFI=<option>[,<auth floor>]
+    ::
 
-**响应：**
+        AT+BLUFI=<option>[,<auth floor>]
 
-::
+    **响应：**
 
-    OK
+    ::
 
-参数
-^^^^
+        OK
 
--  **<option>**：
+    参数
+    ^^^^
 
-   -  0: 关闭 BluFi；
-   -  1: 开启 BluFi。
+    -  **<option>**：
 
--  **<auth floor>**：Wi-Fi 认证模式阈值，ESP-AT 不会连接到认证模式低于此阈值的 AP：
+       -  0: 关闭 BluFi；
+       -  1: 开启 BluFi。
 
-   -  0: OPEN（默认）
-   -  1: WEP
-   -  2: WPA_PSK
-   -  3: WPA2_PSK
-   -  4: WPA_WPA2_PSK
-   -  5: WPA2_ENTERPRISE
-   -  6: WPA3_PSK
-   -  7: WPA2_WPA3_PSK
-   -  8: WAPI_PSK
-   -  9: OWE
-   -  10: WPA3_ENT_192
-   -  11: WPA3_EXT_PSK
-   -  12: WPA3_EXT_PSK_MIXED_MODE
-   -  13: DPP
-   -  14: WPA3_ENTERPRISE
-   -  15: WPA2_WPA3_ENTERPRISE
+    -  **<auth floor>**：Wi-Fi 认证模式阈值，ESP-AT 不会连接到认证模式低于此阈值的 AP：
 
-说明
-^^^^
+       -  0: OPEN（默认）
+       -  1: WEP
+       -  2: WPA_PSK
+       -  3: WPA2_PSK
+       -  4: WPA_WPA2_PSK
+       -  5: WPA2_ENTERPRISE
+       -  6: WPA3_PSK
+       -  7: WPA2_WPA3_PSK
+       -  8: WAPI_PSK
+       -  9: OWE
+       -  10: WPA3_ENT_192
+       -  11: WPA3_EXT_PSK
+       -  12: WPA3_EXT_PSK_MIXED_MODE
+       -  13: DPP
+       -  14: WPA3_ENTERPRISE
+       -  15: WPA2_WPA3_ENTERPRISE
 
-- 您只能在 Bluetooth LE 未初始化情况下开启或关闭 BluFi (:ref:`AT+BLEINIT=0 <cmd-BINIT>`)。
-- 为获得更好的性能，建议在使用 BluFi 功能前，先发送 :ref:`AT+CWMODE=0/1 <cmd-MODE>` 命令禁用 SoftAP。如您想了解更多细节，请阅读 `RF 共存 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ 文档。
-- BluFi 配网后请发送 :ref:`AT+BLUFI=0 <cmd-BLUFI>` 命令关闭 BluFi，以释放资源。
+    说明
+    ^^^^
 
-示例
-^^^^
+    - 您只能在 Bluetooth LE 未初始化情况下开启或关闭 BluFi (:ref:`AT+BLEINIT=0 <cmd-BINIT>`)。
+    - BluFi 配网过程中，{IDF_TARGET_NAME} 收到手机端发送的 SSID 和密码时，会分别输出 ``+SSID:<ssid>`` 和 ``+PASSWORD:<password>``。
 
-::
+    .. only:: esp32 or esp32c3
 
-    AT+BLUFI=1
+        - BluFi 命令无法与 :ref:`Bluetooth LE HID 命令 <cmd-BLEHIDINIT>` 同时使用。
 
-.. _cmd-BLUFINAME:
+    - 为获得更好的性能，建议在使用 BluFi 功能前，先发送 :ref:`AT+CWMODE=0/1 <cmd-MODE>` 命令禁用 SoftAP。如您想了解更多细节，请阅读 `RF 共存 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/{IDF_TARGET_PATH_NAME}/api-guides/coexist.html>`_ 文档。
+    - BluFi 配网后请发送 :ref:`AT+BLUFI=0 <cmd-BLUFI>` 命令关闭 BluFi，以释放资源。
 
-:ref:`AT+BLUFINAME <BLE-AT>`：查询/设置 BluFi 设备名称
--------------------------------------------------------------------------
+    示例
+    ^^^^
 
-查询命令
-^^^^^^^^
+    ::
 
-**功能：**
+        AT+BLUFI=1
 
-查询 BluFi 名称
+    .. _cmd-BLUFINAME:
 
-**命令：**
+    :ref:`AT+BLUFINAME <BLE-AT>`：查询/设置 BluFi 设备名称
+    -------------------------------------------------------------------------
 
-::
+    查询命令
+    ^^^^^^^^
 
-    AT+BLUFINAME?
+    **功能：**
 
-**响应：**
+    查询 BluFi 名称
 
-::
+    **命令：**
 
-    +BLUFINAME:<device_name>
-    OK
+    ::
 
-设置命令
-^^^^^^^^
+        AT+BLUFINAME?
 
-**功能：**
+    **响应：**
 
-设置 BluFi 设备名称
+    ::
 
-**命令：**
+        +BLUFINAME:<device_name>
+        OK
 
-::
+    设置命令
+    ^^^^^^^^
 
-    AT+BLUFINAME=<device_name>
+    **功能：**
 
-**响应：**
+    设置 BluFi 设备名称
 
-::
+    **命令：**
 
-    OK
+    ::
 
-参数
-^^^^
+        AT+BLUFINAME=<device_name>
 
--  **<device_name>**：BluFi 设备名称。
+    **响应：**
 
-说明
-^^^^
+    ::
 
--  如需设置 BluFi 设备名称，请在运行 :ref:`AT+BLUFI=1 <cmd-BLUFI>` 命令前设置，否则将使用默认名称 ``BLUFI_DEVICE``。
--  BluFi 设备名称最大长度为 26 字节。
--  Blufi APP 可以在应用商店中下载。
+        OK
 
-示例
-^^^^
+    参数
+    ^^^^
 
-::
+    -  **<device_name>**：BluFi 设备名称。
 
-    AT+BLUFINAME="BLUFI_DEV"
-    AT+BLUFINAME?
+    说明
+    ^^^^
 
-.. _cmd-BLUFISEND:
+    -  如需设置 BluFi 设备名称，请在运行 :ref:`AT+BLUFI=1 <cmd-BLUFI>` 命令前设置，否则将使用默认名称 ``BLUFI_DEVICE``。
+    -  BluFi 设备名称最大长度为 26 字节。
+    -  Blufi APP 可以在应用商店中下载。
 
-:ref:`AT+BLUFISEND <BLE-AT>`: 发送 BluFi 用户自定义数据
----------------------------------------------------------------------------
+    示例
+    ^^^^
 
-设置命令
-^^^^^^^^
+    ::
 
-**功能：**
+        AT+BLUFINAME="BLUFI_DEV"
+        AT+BLUFINAME?
 
-发送 BluFi 用户自定义数据给手机端
+    .. _cmd-BLUFISEND:
 
-**命令：**
+    :ref:`AT+BLUFISEND <BLE-AT>`: 发送 BluFi 用户自定义数据
+    ---------------------------------------------------------------------------
 
-::
+    设置命令
+    ^^^^^^^^
 
-    AT+BLUFISEND=<length>
+    **功能：**
 
-**Response:**
+    发送 BluFi 用户自定义数据给手机端
 
-::
+    **命令：**
 
-    >
+    ::
 
-符号 ``>`` 表示 AT 准备好接收串口数据，此时您可以输入数据，当数据长度达到参数 ``<length>`` 的值时，开始传输数据。
+        AT+BLUFISEND=<length>
 
-若数据传输成功，则提示：
+    **响应：**
 
-::
+    ::
 
-   OK
+        >
 
-参数
-^^^^
+    符号 ``>`` 表示 AT 准备好接收串口数据，此时您可以输入数据，当数据长度达到参数 ``<length>`` 的值时，开始传输数据。
 
--  **<length>**：数据长度，单位：字节。
+    若数据传输成功，则提示：
 
-说明
-^^^^
+    ::
 
--  自定义数据的长度不能超过 600 字节。
--  如果 ESP 收到手机发来的用户自定义数据，那么会以 ``+BLUFIDATA:<len>,<data>`` 格式打印。
+       OK
 
-示例
-^^^^
+    参数
+    ^^^^
 
-::
+    -  **<length>**：数据长度，单位：字节。
 
-    AT+BLUFISEND=4
-    // 提示 ">" 符号后，输入 4 字节的数据即可，如 "1234"，然后数据会被自动发送给手机
+    说明
+    ^^^^
+
+    -  自定义数据的长度不能超过 600 字节。
+    -  如果 ESP 收到手机发来的用户自定义数据，那么会以 ``+BLUFIDATA:<len>,<data>`` 格式打印。
+
+    示例
+    ^^^^
+
+    ::
+
+        AT+BLUFISEND=4
+        // 提示 ">" 符号后，输入 4 字节的数据即可，如 "1234"，然后数据会被自动发送给手机
 
 .. only:: esp32c3 or esp32c5 or esp32c6 or esp32c61 or esp32c2
 
@@ -3417,3 +3456,101 @@ Bluetooth® Low Energy AT 命令集
         AT+BLEINIT=1   // 角色：客户端
         AT+BLECONN=0,"24:0a:c4:09:34:23"
         AT+BLEREADPHY=0
+
+.. only:: esp32 or esp32c3
+
+    .. _cmd-BLERDRSSI:
+
+    :ref:`AT+BLERDRSSI <BLE-AT>`: 查询当前连接的 RSSI
+    -----------------------------------------------------------------------------
+
+    设置命令
+    ^^^^^^^^^^^
+
+    **功能:**
+
+    查询当前连接的 RSSI。
+
+    **命令:**
+
+    ::
+
+        AT+BLERDRSSI=<conn_index>
+
+    **响应:**
+
+    ::
+
+        +BLERDRSSI:<rssi>
+        OK
+
+    参数
+    ^^^^^^^^^^
+
+    -  **<conn_index>**：Bluetooth LE 连接号。
+
+    说明
+    ^^^^^
+
+    -  此命令用于获取连接的信号强度，因此必须先建立 BLE 连接。
+
+    示例
+    ^^^^^^^^
+
+    ::
+
+        AT+BLEINIT=1   // 角色：客户端
+        AT+BLECONN=0,"24:0a:c4:09:34:23" // 建立 BLE 连接
+        AT+BLERDRSSI=0 // 查询当前连接的 RSSI
+
+    .. _cmd-BLEWL:
+
+    :ref:`AT+BLEWL <BLE-AT>`: 设置白名单
+    -----------------------------------------------------------------------------
+
+    设置命令
+    ^^^^^^^^^^^
+
+    **功能:**
+
+    设置白名单。
+
+    **命令:**
+
+    ::
+
+        AT+BLEWL=<add_or_rmv>[,<addr_type>,<addr>]
+
+    **响应:**
+
+    ::
+
+        OK
+
+    参数
+    ^^^^^^^^^^
+
+    -  **<add_or_rmv>**:
+
+      -  0: 从白名单中移除所有设备
+      -  1: 向白名单添加一个设备
+
+    -  **[<addr_type>]**：地址类型
+
+      -  0: 公共地址
+      -  1: 随机地址
+
+    -  **[<addr>]**：设备地址
+
+    说明
+    ^^^^^
+
+    -  如果 <add_or_rmv> 设置为 0，则 <addr_type> 和 <addr> 参数不需要。
+
+    示例
+    ^^^^^^^^
+
+    ::
+
+        AT+BLEWL=1,0,"24:0a:c4:09:34:23" // 添加设备到白名单
+        AT+BLEWL=0 // 删除所有设备从白名单
