@@ -1234,7 +1234,11 @@ static esp_err_t at_get_wifi_info_from_json_str(char *buffer, wifi_sta_connect_c
     esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     esp_netif_dhcpc_stop(sta_if);
     if (esp_netif_set_ip_info(sta_if, &sta_webinfo) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set ip info");
+        printf("Failed to set ip info!\r\n");
+    }
+    else
+    {
+        printf("success to set ip info!\r\n");
     }
     printf("set ip:" IPSTR, IP2STR(&sta_webinfo.ip));
     printf("set netmask:" IPSTR, IP2STR(&sta_webinfo.netmask));
